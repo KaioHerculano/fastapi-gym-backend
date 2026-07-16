@@ -1,4 +1,4 @@
-# Documentação Técnica: Academia API
+# Documentação Técnica: Gym API
 
 ## Versão: 1.0.1
 ## Data: Julho 2026
@@ -7,7 +7,7 @@
 ---
 
 ## Descrição
-A **Academia API** é um sistema de back-end robusto focado no gerenciamento completo das operações de uma academia de ginástica, estúdios de musculação ou centros de treinamento cruzado (cross-training). Este documento visa detalhar de forma técnica, porém puramente arquitetural e lógica, todos os requisitos e regras de negócio que deverão ser traduzidos em código durante a fase de implementação.
+A **Gym API** é um sistema de back-end robusto focado no gerenciamento completo das operações de uma academia de ginástica, estúdios de musculação ou centros de treinamento cruzado (cross-training). Este documento visa detalhar de forma técnica, porém puramente arquitetural e lógica, todos os requisitos e regras de negócio que deverão ser traduzidos em código durante a fase de implementação.
 
 ## Objetivos
 - Centralizar a gestão de alunos e suas respectivas assinaturas (planos).
@@ -47,7 +47,7 @@ O escopo engloba desde a modelagem dos dados até a definição de fluxos de cai
 
 # Visão Geral
 
-A Academia API atua como o núcleo operacional da academia. Ela processa as requisições enviadas por diferentes clientes (painel web administrativo, aplicativo móvel do aluno, terminal de catraca física) e coordena as regras de negócio antes de persistir as informações no banco de dados.
+A Gym API atua como o núcleo operacional da academia. Ela processa as requisições enviadas por diferentes clientes (painel web administrativo, aplicativo móvel do aluno, terminal de catraca física) e coordena as regras de negócio antes de persistir as informações no banco de dados.
 
 ### Quem utiliza o sistema
 1. **Administradores / Recepcionistas:** Gerenciam matrículas, pagamentos, cadastros gerais (planos, professores) e prestam suporte no balcão.
@@ -143,6 +143,7 @@ As tabelas a seguir refletem as entidades que compõem o banco de dados. Os nome
 | role | Enum | Sim | 'STUDENT' | ADMIN, TEACHER, RECEPTIONIST, STUDENT |
 | is_active | Boolean | Sim | True | Indica se pode logar |
 | created_at | DateTime | Sim | Timestamp | |
+| updated_at | DateTime | Sim | Timestamp | OnUpdate Trigger |
 
 ### 2. Entidade: Aluno (Student)
 **Objetivo:** Dados cadastrais do cliente principal da academia.
@@ -160,6 +161,8 @@ As tabelas a seguir refletem as entidades que compõem o banco de dados. Os nome
 | emergency_contact_name | String(150) | Sim | N/A | Nome do contato |
 | emergency_contact_phone| String(15) | Sim | N/A | Telefone do contato |
 | is_active | Boolean | Sim | True | Para soft delete / inativação |
+| created_at | DateTime | Sim | Timestamp | |
+| updated_at | DateTime | Sim | Timestamp | OnUpdate Trigger |
 
 ### 4. Entidade: Professor (Teacher)
 **Objetivo:** Dados dos profissionais de educação física.
@@ -173,6 +176,8 @@ As tabelas a seguir refletem as entidades que compõem o banco de dados. Os nome
 | cref | String(20) | Sim | N/A | Único (Conselho Regional) |
 | specialty | String(100) | Não | Null | Ex: Musculação, Pilates |
 | is_active | Boolean | Sim | True | Para soft delete / inativação |
+| created_at | DateTime | Sim | Timestamp | |
+| updated_at | DateTime | Sim | Timestamp | OnUpdate Trigger |
 
 ### 5. Entidade: Plano (Plan)
 **Objetivo:** Modelos de assinaturas vendidos.
@@ -351,9 +356,12 @@ As regras a seguir determinam o comportamento sistêmico da aplicação. Qualque
 - **RN13:** Ao criar uma nova ficha de treino (A, B, C) e marcá-la como `is_active = True`, todas as fichas de treino passadas deste aluno deverão, por questões lógicas de visualização no app, ser agrupadas, e a interface deve priorizar os treinos ativos no momento.
 - **RN14:** Um aluno cujo cadastro está inativado (`is_active = False`) não pode receber novas fichas de treino.
 
+**Regras de Schemas de Atualização (PATCH)**
+- **RN15:** Schemas de atualização nunca devem expor Chaves Primárias (`id`) ou Chaves Estrangeiras Críticas (`user_id`). Além disso, todos os campos devem ser `Optional` com valor padrão `None` para evitar injeção de propriedades e substituições acidentais (ex: evitar reativar um usuário inativo só porque o campo `is_active` não foi fornecido).
+
 **Regras Financeiras**
-- **RN15:** O estorno de um pagamento só é possível se o pagamento estava com status `PAID`.
-- **RN16:** Quando um pagamento pendente atinge mais de 5 dias de atraso, o sistema (via verificação programada ou de forma lazy na requisição de login/check-in) deve suspender o acesso do aluno temporariamente.
+- **RN16:** O estorno de um pagamento só é possível se o pagamento estava com status `PAID`.
+- **RN17:** Quando um pagamento pendente atinge mais de 5 dias de atraso, o sistema (via verificação programada ou de forma lazy na requisição de login/check-in) deve suspender o acesso do aluno temporariamente.
 
 ---
 
@@ -480,11 +488,11 @@ Esta seção documenta a interface da API. O design obedece às boas práticas R
 
 - **POST `/students`**
   - **Descrição:** Cria novo aluno.
-  - **Body:** `full_name`, `cpf`, `birth_date`, `phone`, `email`, `emergency_contact`
+  - **Body:** `full_name`, `cpf`, `birth_date`, `phone`, `email`, `emergency_contact_name`, `emergency_contact_phone`
   - **Resposta 201:** Aluno criado.
   - **Erros:** 400 Bad Request, 409 Conflict (CPF/Email já existe), 422 Unprocessable Entity (Idade inválida).
 
-- **PUT `/students/{id}`**
+- **PATCH `/students/{id}`**
   - **Descrição:** Atualiza dados do aluno.
   - **Resposta 200:** Aluno atualizado.
 
@@ -569,7 +577,7 @@ O sistema deve padronizar o retorno dos verbos e códigos de status HTTP conform
 
 # Estrutura sugerida do projeto
 
-Esta arquitetura reflete os princípios do Clean Architecture / Padrão de Camadas (N-Tier), isolando regras de negócio da camada de transporte (HTTP) e persistência.
+Esta arquitetura reflete os princípios do Clean Architecture / Padrão de Camadas (N-Tier), isolando regras de negócio da camada de transporte (HTTP) e persistência. A pasta central foi renomeada para **app** conforme o padrão do mercado.
 
 ```text
 app/
@@ -589,89 +597,6 @@ app/
 - **services:** Recebe dados limpos, aplica validações complexas (RN01, RN04), orquestra as dependências e manda salvar.
 - **repositories:** Os únicos arquivos que conhecem SQL/ORM. Executam `insert`, `select`, `update` no banco.
 - **models:** Espelho literal das tabelas do banco.
-
----
-
-# Roadmap de Desenvolvimento: Por onde começar?
-
-O desenvolvimento da API deve seguir uma abordagem iterativa e orientada a **fatias verticais (Vertical Slices)**. Em vez de criar todo o banco de dados de uma vez (o que pode gerar confusão e retrabalho), você deve implementar entidade por entidade, de ponta a ponta (Model, Schema, Repository, Service e Router), seguindo a ordem estrita de dependências. Se você é o desenvolvedor encarregado, **comece exatamente por aqui**.
-
-### Passo 0: Preparação e Setup Inicial
-1. **Configuração de Ambiente:** Inicialize o projeto (FastAPI, pip/poetry), configure o arquivo `.env` para as credenciais do banco.
-2. **Conexão com Banco de Dados:** Configure o SQLAlchemy e a ferramenta Alembic. Teste se a aplicação consegue se conectar ao banco de dados relacional.
-
-### Passo 1: Módulo de Usuários, Autenticação e Permissões (User & Role)
-*Dependências: Nenhuma.*
-1. Crie o Enum de Roles e o Model `User` (contendo o campo `role`).
-2. Gere a migration via Alembic e aplique no banco (`alembic revision --autogenerate`).
-3. Desenvolva o CRUD completo de `User`, incluindo hash de senhas (com `passlib`).
-4. Desenvolva a rota de Login (`POST /auth/login`) gerando o token JWT.
-5. Crie a dependência de segurança (ex: `Depends(get_current_user)`) para proteger as próximas rotas validando o Role do usuário.
-
-### Passo 2: Cadastros Base - Alunos (Student) e Professores (Teacher)
-*Dependências: User.*
-1. Crie os Models `Student` e `Teacher`.
-2. Gere as migrations e aplique.
-3. Desenvolva o CRUD completo de Alunos e Professores. (Lembre-se que Teacher tem relação 1:1 com User).
-4. Proteja as rotas exigindo o JWT criado no Passo 2.
-
-### Passo 4: Catálogos Independentes - Planos (Plan) e Exercícios (Exercise)
-*Dependências: Nenhuma.*
-1. Crie os Models `Plan` e `Exercise`.
-2. Gere as migrations e aplique.
-3. Construa o CRUD de ponta a ponta para ambos.
-
-### Passo 5: O Coração Financeiro - Matrículas (Enrollment) e Pagamentos (Payment)
-*Dependências: Student e Plan.*
-1. Crie os Models `Enrollment` e `Payment`. Gere e aplique as migrations.
-2. **Matrículas:** Implemente a criação de matrícula, garantindo as validações de regra de negócio (RN04 a RN07).
-3. **Motor Financeiro:** Dentro do Service de criação de Matrícula, insira a lógica que cria os registros na tabela `Payment` (Pagamentos). *Esta etapa deve rodar em uma única transação no banco (ACID).*
-4. Desenvolva os endpoints de atualização de Pagamento (ex: Baixa de PIX ou Cartão).
-
-### Passo 6: Operação Diária - Treinos (Workout)
-*Dependências: Student, Teacher e Exercise.*
-1. Crie os Models `Workout` e `WorkoutExercise` (tabela associativa).
-2. Gere as migrations e aplique.
-3. Desenvolva a rota que cria a ficha de treino recebendo um payload JSON aninhado (salvando tudo na mesma transação).
-
-### Passo 7: Validação Final - Check-in
-*Dependências: Student, Enrollment e Payment.*
-1. Crie o Model `Checkin`. Gere a migration e aplique.
-2. Construa o endpoint `POST /checkins`.
-3. Programe TODAS as condições de bloqueio (RN08 a RN11): verificar pagamento vencido, matrícula expirada e bloqueio de intervalo de tempo.
-
-### Passo 8: Lapidação e Testes
-- Adicione as paginações (`limit` / `offset`) nas listagens de GET.
-- Escreva testes unitários focados nas regras dos Services.
-- Finalize com as rotas e lógicas de Soft Delete.
-
----
-
-# Desafios Extras
-
-Ao implementar, o time técnico de desenvolvimento deverá se preocupar com os seguintes aspectos complexos:
-
-1. **JWT e Refresh Token:** Como tokens expiram rápido (ex: 1 hora) por segurança, a implementação precisa fornecer rota para trocar um token expirado sem que o usuário faça login novamente com senha.
-2. **Rate Limit:** Impedir ataques de força bruta no endpoint de `/auth/login` e requisições massivas no `/checkins`.
-3. **Filtros Dinâmicos e Paginação:** Criar endpoints capazes de filtrar `?name=João&status=ACTIVE` com paginação nativa (Limit/Offset).
-4. **Soft Delete:** Nunca usar comando DELETE puro. Alunos inativados não devem sumir para não quebrarem o histórico de relatórios financeiros e acesso passado.
-5. **Transações (ACID):** Criar uma Matrícula e seus N Pagamentos deve ocorrer dentro da mesma transaction do banco. Se os pagamentos falharem, a matrícula deve ser revertida por rollback.
-6. **Docker:** Todo o ambiente deve estar contêinerizado (API e Banco de dados) facilitando testes e padronização entre desenvolvedores.
-7. **Pytest (Testes Automatizados):** Regras críticas de validação de datas, cálculo de vencimento e dupla matrícula DEVEM estar cobertas por testes de unidade nos Services.
-8. **Permissões Refinadas:** Uma rota de DELETE /plans não pode, em nenhuma hipótese, ser acessada por um papel Professor, apenas Admin.
-
----
-
-# Melhorias Futuras
-
-As funcionalidades abaixo estão fora do escopo da versão 1.0.0, mas a arquitetura de dados concebida acima já prepara o terreno para suportar essas adições no futuro:
-
-- **Aplicativo Mobile do Aluno:** Onde o próprio aluno lê o Treino e insere a carga real que ele fez naquele dia (histórico de progressão de carga).
-- **Pagamento Integrado:** Substituir a baixa manual do pagamento na recepção por Webhooks de provedores (ex: Stripe, Pagar.me, Asaas) informando que o PIX foi pago e a API baixando automático.
-- **Catraca Física via TCP/IP:** Criar serviço em background rodando localmente na academia que espelha os dados dessa API na nuvem e destrava catracas físicas por hardware.
-- **Reconhecimento Facial:** Alterar o endpoint de checkin para não ser mais envio de ID bruto, mas aceitar validação via integração de API biométrica.
-- **Notificações Push / Email:** Disparo automático (Cron Job): "Sua mensalidade vence em 3 dias", ou "Sua matrícula expirou".
-- **Agenda de Aulas (CrossFit / Spinning):** Criar reserva de horários limitados nas salas, onde o check-in passa a abater créditos de aula ao invés de livre acesso.
 
 ---
 
