@@ -51,7 +51,6 @@ class StudentCreateSchema(BaseModel):
 
 class StudentUpdateSchema(BaseModel):
     full_name: Optional[str] = None
-    cpf: Optional[str] = None
     birth_date: Optional[date] = None
     phone: Optional[str] = None
     email: Optional[EmailStr] = None
