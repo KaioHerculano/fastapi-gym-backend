@@ -76,7 +76,7 @@ async def list_users(
     search: Optional[str] = Query(None, description='Buscar por e-mail'),
     db: AsyncSession = Depends(get_session)
 ):
-    query = select(User)
+    query = select(User).where(User.is_active == True)
 
     if search:
         search_filter = f'%{search}%'
@@ -387,6 +387,221 @@ async def delete_student(
     student.is_active = False
 
     db.add(student)
+    await db.commit()
+
+    return
+
+
+@teachers_router.post(
+    path='/',
+    status_code=status.HTTP_201_CREATED,
+    response_model=TeacherPublicSchema,
+    summary='Criar novo professor',
+)
+async def create_teacher(
+    teacher: TeacherCreateSchema,
+    db: AsyncSession = Depends(get_session),
+):
+    teacher_user_exist = await db.scalar(
+        select(exists().where(User.id == teacher.user_id))
+    )
+
+    if not teacher_user_exist:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail='Usuário não encontrado',
+        )
+
+    teacher_user_id_exist = await db.scalar(
+        select(exists().where(Teacher.user_id == teacher.user_id))
+    )
+
+    if teacher_user_id_exist:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail='Conta já vinculada a outro professor',
+        )
+
+    cref_exist = await db.scalar(
+        select(exists().where(Teacher.cref == teacher.cref))
+    )
+
+    if cref_exist:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail='CREF já cadastrado',
+        )
+
+    email_exist = await db.scalar(
+        select(exists().where(Teacher.email == teacher.email))
+    )
+
+    if email_exist:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail='E-mail já cadastrado',
+        )
+
+    db_techer = Teacher(
+        user_id = teacher.user_id,
+        full_name = teacher.full_name,
+        cref = teacher.cref,
+        phone = teacher.phone,
+        email = teacher.email,
+        specialty = teacher.specialty,
+        is_active = teacher.is_active,
+    )
+
+    db.add(db_techer)
+    await db.commit()
+    await db.refresh(db_techer)
+
+    return db_techer
+
+
+@teachers_router.get(
+    path='/',
+    status_code=status.HTTP_200_OK,
+    response_model=TeacherListPublicSchema,
+    summary='Listar todos os professores Ativos',
+)
+async def list_teachers(
+    offset: int = Query(0, ge=0, description='Número de registros para pular'),
+    limit: int = Query(100, ge=1, le=100, description='Limite de registros por página'),
+    search: Optional[str] = Query(None, description='Buscar por CREF, nome, e-mail ou telefone'),
+    db: AsyncSession = Depends(get_session),
+):
+    query = select(Teacher).where(Teacher.is_active == True)
+
+    if search:
+        search_fielter = f'%{search}%'
+        query = query.where(Teacher.cref.ilike(search_fielter) |
+                Teacher.full_name.ilike(search_fielter) |
+                Teacher.email.ilike(search_fielter) |
+                Teacher.phone.ilike(search_fielter) 
+            )
+
+    query = query.offset(offset).limit(limit)
+
+    result = await db.execute(query)
+    teachers = result.scalars().all()
+
+    return {
+        'teachers': teachers,
+        'offset': offset,
+        'limit': limit,
+    }
+
+
+@teachers_router.get(
+    path='/{teacher_id}',
+    status_code=status.HTTP_200_OK,
+    response_model=TeacherPublicSchema,
+    summary='Buscar professor pelo ID',
+)
+async def get_teacher(
+    teacher_id: UUID,
+    db: AsyncSession = Depends(get_session),
+):
+    teacher = await db.get(Teacher, teacher_id)
+
+    if not teacher:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail='Professor não encontrado',
+        )
+
+    return teacher
+
+
+@teachers_router.patch(
+    path='/{teacher_id}',
+    status_code=status.HTTP_200_OK,
+    response_model=TeacherPublicSchema,
+    summary='Atualizar professor',
+)
+async def updated_teacher(
+    teacher_id: UUID,
+    teacher_update: TeacherUpdateSchema,
+    db: AsyncSession = Depends(get_session),
+):
+    teacher = await db.get(Teacher, teacher_id)
+
+    if not teacher:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail='Professor não encontrado',
+        )
+
+    update_data = teacher_update.model_dump(exclude_unset=True)
+
+    if 'cref' in update_data and update_data['cref'] != teacher.cref:
+        cref_exists = await db.scalar(
+            select(
+                exists().where(
+                    (Teacher.cref == update_data['cref']) &
+                    (Teacher.id != teacher_id)
+                )
+            )
+        )
+
+        if cref_exists:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail='CREF já cadastrado',
+            )
+
+    if 'email' in update_data and update_data['email'] != teacher.email:
+        email_exists = await db.scalar(
+            select(
+                exists().where(
+                    (Teacher.email == update_data['email']) &
+                    (Teacher.id != teacher_id)
+                )
+            )
+        )
+
+        if email_exists:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail='E-mail já cadastrado',
+            )
+
+    for fild, value in update_data.items():
+        setattr(teacher, fild, value)
+
+    await db.commit()
+    await db.refresh(teacher)
+
+    return teacher
+
+
+@teachers_router.delete(
+    path='/{teacher_id}',
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary='Deletar professor',
+)
+async def delete_teacher(
+    teacher_id: UUID,
+    db: AsyncSession = Depends(get_session),
+):
+    teacher = await db.get(Teacher, teacher_id)
+
+    if not teacher:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail='Professor não encontrado',
+        )
+
+    if teacher.is_active == False:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail='Professor já deletado',
+        )
+    
+    teacher.is_active = False
+
+    db.add(teacher)
     await db.commit()
 
     return

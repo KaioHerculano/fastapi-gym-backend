@@ -86,6 +86,8 @@ class TeacherCreateSchema(BaseModel):
     user_id: UUID
     full_name: str
     cref: str
+    phone: str
+    email: EmailStr
     specialty: Optional[str] = None
     is_active: bool = True
 
@@ -93,6 +95,8 @@ class TeacherCreateSchema(BaseModel):
 class TeacherUpdateSchema(BaseModel):
     full_name: Optional[str] = None
     cref: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[EmailStr] = None
     specialty: Optional[str] = None
     is_active: Optional[bool] = None
 
@@ -104,6 +108,8 @@ class TeacherPublicSchema(BaseModel):
     user_id: UUID
     full_name: str
     cref: str
+    phone: str
+    email: EmailStr
     specialty: Optional[str] = None
     is_active: bool
     created_at: datetime
