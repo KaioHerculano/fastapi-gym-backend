@@ -168,14 +168,51 @@ class TeacherCreateSchema(BaseModel):
     specialty: Optional[str] = None
     is_active: bool = True
 
+    @field_validator('full_name')
+    def validate_full_name(cls, value: str) -> str:
+        if len(value) < 3:
+            raise ValueError('Nome deve ter no minimo 3 caracteres')
+        return value
+
+    @field_validator('cref')
+    def validate_cref(cls, value: str) -> str:
+        if len(value) != 11:
+            raise ValueError('CREF deve ter 11 caracteres')
+        return value
+
+    @field_validator('phone')
+    def validate_phone(cls, value: str) -> str:
+        if len(value) not in [10, 11]:
+            raise ValueError('Telefone deve ter 10 ou 11 digitos')
+        if not value.isdigit():
+            raise ValueError('Telefone deve conter apenas digitos')
+        return value
+
 
 class TeacherUpdateSchema(BaseModel):
     full_name: Optional[str] = None
-    cref: Optional[str] = None
     phone: Optional[str] = None
     email: Optional[EmailStr] = None
     specialty: Optional[str] = None
     is_active: Optional[bool] = None
+
+    @field_validator('full_name')
+    def validate_full_name(cls, value: str) -> str:
+        if value is None:
+            return value
+        if len(value) < 3:
+            raise ValueError('Nome deve ter no minimo 3 caracteres')
+        return value
+
+    @field_validator('phone')
+    def validate_phone(cls, value: str) -> str:
+        if value is None:
+            return value
+        if len(value) not in [10, 11]:
+            raise ValueError('Telefone deve ter 10 ou 11 digitos')
+        if not value.isdigit():
+            raise ValueError('Telefone deve conter apenas digitos')
+        return value
 
 
 class TeacherPublicSchema(BaseModel):
