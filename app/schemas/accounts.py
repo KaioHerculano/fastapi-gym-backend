@@ -83,10 +83,19 @@ class StudentCreateSchema(BaseModel):
 
     @field_validator('birth_date')
     def validate_birth_date(cls, value: date) -> date:
+
         if value > date.today():
-            raise ValueError('Data de nascimento invalida')
+            raise ValueError('Data de nascimento não pode ser no futuro')
         if value.year < 1900:
             raise ValueError('Data de nascimento invalida')
+
+        today = date.today()
+
+        age = today.year - value.year - ((today.month, today.day) < (value.month, value.day))
+
+        if age < 14:
+            raise ValueError('O aluno deve ter no minimo 14 anos de idade')
+
         return value
 
     @field_validator('phone')
@@ -119,10 +128,19 @@ class StudentUpdateSchema(BaseModel):
     def validate_birth_date(cls, value: date) -> date:
         if value is None:
             return value
+
         if value > date.today():
-            raise ValueError('Data de nascimento invalida')
+            raise ValueError('Data de nascimento não pode ser no futuro')
         if value.year < 1900:
             raise ValueError('Data de nascimento invalida')
+
+        today = date.today()
+
+        age = today.year - value.year - ((today.month, today.day) < (value.month, value.day))
+
+        if age < 14:
+            raise ValueError('O aluno deve ter no minimo 14 anos de idade')
+
         return value
 
     @field_validator('phone')
