@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, exists
 
 from app.core.database import get_session
+from app.core.security import get_current_user
 from app.core.security import get_password_hash
 from app.models.accounts import User, Student, Teacher
 from app.schemas.accounts import(
@@ -74,6 +75,7 @@ async def list_users(
     offset: int = Query(0, ge=0, description='Número de registros para pular'),
     limit: int = Query(100, ge=1, le=100, description='Limite de registros por página'),
     search: Optional[str] = Query(None, description='Buscar por e-mail'),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session)
 ):
     query = select(User).where(User.is_active == True)
@@ -102,6 +104,7 @@ async def list_users(
 )
 async def get_user(
     user_id: UUID,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
     user = await db.get(User, user_id)
@@ -124,6 +127,7 @@ async def get_user(
 async def update_user(
     user_id: UUID,
     user_update: UserUpdateSchema,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
     user = await db.get(User, user_id)
@@ -171,6 +175,7 @@ async def update_user(
 )
 async def delete_user(
     user_id: UUID,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
     user = await db.get(User, user_id)
@@ -197,6 +202,7 @@ async def delete_user(
 )
 async def create_student(
     student: StudentCreateSchema,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
     if student.user_id:
@@ -270,6 +276,7 @@ async def list_students(
     offset: int = Query(0, ge=0, description='Número de registros para pular'),
     limit: int = Query(100, ge=1, le=100, description='Limite de registros por página'),
     search: Optional[str] = Query(None, description='Buscar por CPF, nome, e-mail ou contato de emergência'),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session)
 ):
     query = select(Student).where(Student.is_active == True)
@@ -302,6 +309,7 @@ async def list_students(
 )
 async def get_student(
     student_id: UUID,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
     student = await db.get(Student, student_id)
@@ -324,6 +332,7 @@ async def get_student(
 async def updated_student(
     student_id: UUID,
     student_update: StudentUpdateSchema,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
     student = await db.get(Student, student_id)
@@ -368,6 +377,7 @@ async def updated_student(
 )
 async def delete_student(
     student_id: UUID,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
     student = await db.get(Student, student_id)
@@ -400,6 +410,7 @@ async def delete_student(
 )
 async def create_teacher(
     teacher: TeacherCreateSchema,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
     teacher_user_exist = await db.scalar(
@@ -469,6 +480,7 @@ async def list_teachers(
     offset: int = Query(0, ge=0, description='Número de registros para pular'),
     limit: int = Query(100, ge=1, le=100, description='Limite de registros por página'),
     search: Optional[str] = Query(None, description='Buscar por CREF, nome, e-mail ou telefone'),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
     query = select(Teacher).where(Teacher.is_active == True)
@@ -501,6 +513,7 @@ async def list_teachers(
 )
 async def get_teacher(
     teacher_id: UUID,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
     teacher = await db.get(Teacher, teacher_id)
@@ -523,6 +536,7 @@ async def get_teacher(
 async def updated_teacher(
     teacher_id: UUID,
     teacher_update: TeacherUpdateSchema,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
     teacher = await db.get(Teacher, teacher_id)
@@ -583,6 +597,7 @@ async def updated_teacher(
 )
 async def delete_teacher(
     teacher_id: UUID,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
     teacher = await db.get(Teacher, teacher_id)
