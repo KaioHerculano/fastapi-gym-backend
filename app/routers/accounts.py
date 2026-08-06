@@ -9,6 +9,8 @@ from app.core.database import get_session
 from app.core.security import get_current_user
 from app.core.security import get_password_hash
 from app.models.accounts import User, Student, Teacher
+from app.services.accounts import create_user as create_user_service
+from app.services.accounts import list_users as list_users_service
 from app.schemas.accounts import(
     UserCreateSchema,
     UserPublicSchema,
@@ -40,29 +42,7 @@ async def create_user(
     user: UserCreateSchema,
     db: AsyncSession = Depends(get_session),
 ):
-
-    email_exist = await db.scalar(
-        select(exists().where(User.email == user.email))
-    )
-
-    if email_exist:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail='E-mail já cadastrado',
-        )
-
-    db_user = User(
-        email = user.email,
-        password = get_password_hash(user.password),
-        role = user.role,
-        is_active = user.is_active
-    )
-
-    db.add(db_user)
-    await db.commit()
-    await db.refresh(db_user)
-
-    return db_user
+    return await create_user_service(db, user)
 
 
 @users_router.get(
@@ -78,22 +58,7 @@ async def list_users(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session)
 ):
-    query = select(User).where(User.is_active == True)
-
-    if search:
-        search_filter = f'%{search}%'
-        query = query.where(User.email.ilike(search_filter))
-
-    query = query.offset(offset).limit(limit)
-
-    result = await db.execute(query)
-    users = result.scalars().all()
-
-    return {
-        'users': users,
-        'offset': offset,
-        'limit': limit,
-    }
+    return await list_users_service(db, offset, limit, search)
 
 
 @users_router.get(
