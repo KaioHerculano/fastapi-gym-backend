@@ -2,12 +2,16 @@ from typing import Optional
 from enum import Enum
 from uuid import uuid4, UUID
 
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 
-from sqlalchemy import Date, func, String, ForeignKey
+from sqlalchemy import Date, String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models import Base
+
+
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 class RoleEnum(str, Enum):
@@ -26,11 +30,11 @@ class User(Base):
     role: Mapped[RoleEnum] = mapped_column()
     is_active: Mapped[bool] = mapped_column(default=True)
     created_at: Mapped[datetime] = mapped_column(
-        server_default=func.now(),
+        default=utc_now,
     )
     updated_at: Mapped[datetime] = mapped_column(
-        server_default=func.now(),
-        onupdate=func.now(),
+        default=utc_now,
+        onupdate=utc_now,
     )
 
 
@@ -48,11 +52,11 @@ class Student(Base):
     emergency_contact_name: Mapped[str] = mapped_column(String(150))
     is_active: Mapped[bool] = mapped_column(default=True)
     created_at: Mapped[datetime] = mapped_column(
-        server_default=func.now(),
+        default=utc_now,
     )
     updated_at: Mapped[datetime] = mapped_column(
-        server_default=func.now(),
-        onupdate=func.now(),
+        default=utc_now,
+        onupdate=utc_now,
     )
 
 
@@ -68,10 +72,10 @@ class Teacher(Base):
     specialty: Mapped[Optional[str]] = mapped_column(String(100))
     is_active: Mapped[bool] = mapped_column(default=True)
     created_at: Mapped[datetime] = mapped_column(
-        server_default=func.now(),
+        default=utc_now,
     )
     updated_at: Mapped[datetime] = mapped_column(
-        server_default=func.now(),
-        onupdate=func.now(),
+        default=utc_now,
+        onupdate=utc_now,
     )
     
