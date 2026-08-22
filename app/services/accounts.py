@@ -1,14 +1,18 @@
 from typing import Optional
+from uuid import UUID
 
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import get_password_hash
 from app.models.accounts import User
-from app.repositories.accounts import user_email_exists
 from app.repositories.accounts import create_user as create_user_repository
+from app.repositories.accounts import delete_user as delete_user_repository
+from app.repositories.accounts import get_user as get_user_repository
 from app.repositories.accounts import list_users as list_users_repository
-from app.schemas.accounts import UserCreateSchema
+from app.repositories.accounts import update_user as update_user_repository
+from app.repositories.accounts import user_email_exists
+from app.schemas.accounts import UserCreateSchema, UserUpdateSchema
 
 
 async def create_user(
@@ -46,3 +50,73 @@ async def list_users(
         'offset': offset,
         'limit': limit,
     }
+
+
+async def get_user(
+    db: AsyncSession,
+    user_id: UUID,
+):
+    user = await get_user_repository(db, user_id)
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail='Usuário não encontrado',
+        )
+
+    return user
+
+
+async def update_user(
+    db: AsyncSession,
+    user_update: UserUpdateSchema,
+    user_id: UUID,
+):
+
+    user = await get_user_repository(db, user_id)
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail='Usuário não encontrado',
+        )
+
+    update_data = user_update.model_dump(exclude_unset=True)
+
+    if 'email' in update_data and update_data['email'] != user.email:
+        email_exists = await user_email_exists(
+            db,
+            update_data['email'],
+            exclude_user_id=user_id
+        )
+
+        if email_exists:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail='E-mail já cadastrado',
+            )
+
+    if 'password' in update_data:
+        update_data['password'] = get_password_hash(update_data['password'])
+
+    for field, value in update_data.items():
+        setattr(user, field, value)
+
+    return await update_user_repository(db, user)
+
+
+async def delete_user(
+    db: AsyncSession,
+    user_id: UUID,
+):
+    user = await get_user_repository(db, user_id)
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail='Usuário não encontrado',
+        )
+
+    user.is_active = False
+
+    return await delete_user_repository(db, user)
