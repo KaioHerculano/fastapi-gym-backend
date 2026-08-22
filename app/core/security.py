@@ -1,6 +1,6 @@
-from uuid import UUID
 from datetime import datetime, timedelta, timezone
 from typing import Dict, Optional
+from uuid import UUID
 
 import jwt
 from fastapi import Depends, HTTPException, status
@@ -58,6 +58,7 @@ def verify_token(token: str) -> Dict:
             detail='Could not validate credentials',
             headers={'WWW-Authenticate': 'Bearer'},
         )
+
 
 async def authenticate_user(
     email: str,

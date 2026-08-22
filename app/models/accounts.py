@@ -1,10 +1,9 @@
-from typing import Optional
+from datetime import date, datetime, timezone
 from enum import Enum
-from uuid import uuid4, UUID
+from typing import Optional
+from uuid import UUID, uuid4
 
-from datetime import datetime, date, timezone
-
-from sqlalchemy import Date, String, ForeignKey
+from sqlalchemy import Date, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models import Base
@@ -42,7 +41,10 @@ class Student(Base):
     __tablename__ = 'students'
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
-    user_id: Mapped[UUID | None] = mapped_column(ForeignKey('users.id'), unique=True)
+    user_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey('users.id'),
+        unique=True
+    )
     full_name: Mapped[str] = mapped_column(String(150))
     cpf: Mapped[str] = mapped_column(String(11), unique=True)
     birth_date: Mapped[date] = mapped_column(Date)
@@ -64,7 +66,10 @@ class Teacher(Base):
     __tablename__ = 'teachers'
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
-    user_id: Mapped[UUID | None] = mapped_column(ForeignKey('users.id'), unique=True)
+    user_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey('users.id'),
+        unique=True
+    )
     full_name: Mapped[str] = mapped_column(String(150))
     cref: Mapped[str] = mapped_column(String(20), unique=True)
     phone: Mapped[str] = mapped_column(String(15))
@@ -78,4 +83,3 @@ class Teacher(Base):
         default=utc_now,
         onupdate=utc_now,
     )
-    
