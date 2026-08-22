@@ -46,10 +46,10 @@ Legenda:
 
 Objetivo: alinhar o projeto com a propria documentacao, que pede routers sem regra de negocio e sem query direta.
 
-- [ ] Criar pacote `app/repositories/`.
-- [ ] Criar pacote `app/services/`.
-- [ ] Extrair queries de usuario para `accounts_repository`.
-- [ ] Extrair regras de usuario para `accounts_service`.
+- [x] Criar pacote `app/repositories/`.
+- [x] Criar pacote `app/services/`.
+- [x] Extrair queries de usuario para `accounts_repository`.
+- [x] Extrair regras de usuario para `accounts_service`.
 - [ ] Extrair queries de aluno para `students_repository`.
 - [ ] Extrair regras de aluno para `students_service`.
 - [ ] Extrair queries de professor para `teachers_repository`.
