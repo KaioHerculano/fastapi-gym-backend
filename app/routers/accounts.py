@@ -1,29 +1,31 @@
-from uuid import UUID
 from typing import Optional
+from uuid import UUID
 
-from fastapi import APIRouter, status, HTTPException, Query, Depends
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import exists, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, exists
 
 from app.core.database import get_session
 from app.core.security import get_current_user
-from app.core.security import get_password_hash
-from app.models.accounts import User, Student, Teacher
-from app.schemas.accounts import(
-    UserCreateSchema,
-    UserPublicSchema,
-    UserListPublicSchema,
-    UserUpdateSchema,
+from app.models.accounts import Student, Teacher, User
+from app.schemas.accounts import (
     StudentCreateSchema,
-    StudentPublicSchema,
     StudentListPublicSchema,
+    StudentPublicSchema,
     StudentUpdateSchema,
     TeacherCreateSchema,
-    TeacherPublicSchema,
     TeacherListPublicSchema,
+    TeacherPublicSchema,
     TeacherUpdateSchema,
+    UserCreateSchema,
+    UserListPublicSchema,
+    UserPublicSchema,
+    UserUpdateSchema,
 )
-
+from app.services.accounts import create_user as create_user_service
+from app.services.accounts import get_user as get_user_service
+from app.services.accounts import list_users as list_users_service
+from app.services.accounts import update_user as update_user_service
 
 users_router = APIRouter(prefix="/users",)
 students_router = APIRouter(prefix="/students",)
@@ -40,29 +42,7 @@ async def create_user(
     user: UserCreateSchema,
     db: AsyncSession = Depends(get_session),
 ):
-
-    email_exist = await db.scalar(
-        select(exists().where(User.email == user.email))
-    )
-
-    if email_exist:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail='E-mail já cadastrado',
-        )
-
-    db_user = User(
-        email = user.email,
-        password = get_password_hash(user.password),
-        role = user.role,
-        is_active = user.is_active
-    )
-
-    db.add(db_user)
-    await db.commit()
-    await db.refresh(db_user)
-
-    return db_user
+    return await create_user_service(db, user)
 
 
 @users_router.get(
@@ -73,27 +53,14 @@ async def create_user(
 )
 async def list_users(
     offset: int = Query(0, ge=0, description='Número de registros para pular'),
-    limit: int = Query(100, ge=1, le=100, description='Limite de registros por página'),
+    limit: int = Query(
+        100, ge=1, le=100, description='Limite de registros por página'
+    ),
     search: Optional[str] = Query(None, description='Buscar por e-mail'),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session)
 ):
-    query = select(User).where(User.is_active == True)
-
-    if search:
-        search_filter = f'%{search}%'
-        query = query.where(User.email.ilike(search_filter))
-
-    query = query.offset(offset).limit(limit)
-
-    result = await db.execute(query)
-    users = result.scalars().all()
-
-    return {
-        'users': users,
-        'offset': offset,
-        'limit': limit,
-    }
+    return await list_users_service(db, offset, limit, search)
 
 
 @users_router.get(
@@ -107,15 +74,7 @@ async def get_user(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
-    user = await db.get(User, user_id)
-
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail='Usuário não encontrado',
-        )
-
-    return user
+    return await get_user_service(db, user_id)
 
 
 @users_router.patch(
@@ -130,42 +89,8 @@ async def update_user(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
-    user = await db.get(User, user_id)
 
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail='Usuário não encontrado',
-        )
-
-    update_data = user_update.model_dump(exclude_unset=True)
-
-    if 'email' in update_data and update_data['email'] != user.email:
-        email_exists = await db.scalar(
-            select(
-                exists().where(
-                    (User.email == update_data['email']) &
-                    (User.id != user_id)
-                )
-            )
-        )
-
-        if email_exists:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail='E-mail já cadastrado',
-            )
-
-    if 'password' in update_data:
-        update_data['password'] = get_password_hash(update_data['password'])
-
-    for field, value in update_data.items():
-        setattr(user, field, value)
-
-    await db.commit()
-    await db.refresh(user)
-
-    return user
+    return await update_user_service(db, user_update, user_id)
 
 
 @users_router.delete(
@@ -178,20 +103,8 @@ async def delete_user(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
-    user = await db.get(User, user_id)
 
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail='Usuário não encontrado',
-        )
-    
-    user.is_active = False
-
-    db.add(user)
-    await db.commit()
-
-    return 
+    return await update_user_service(db, user_id)
 
 
 @students_router.post(
@@ -248,15 +161,15 @@ async def create_student(
         )
 
     db_student = Student(
-        user_id = student.user_id,
-        full_name = student.full_name,
-        cpf = student.cpf,
-        birth_date = student.birth_date,
-        phone = student.phone,
-        email = student.email,
-        emergency_contact_name = student.emergency_contact_name,
-        emergency_contact_phone = student.emergency_contact_phone,
-        is_active = student.is_active,
+        user_id=student.user_id,
+        full_name=student.full_name,
+        cpf=student.cpf,
+        birth_date=student.birth_date,
+        phone=student.phone,
+        email=student.email,
+        emergency_contact_name=student.emergency_contact_name,
+        emergency_contact_phone=student.emergency_contact_phone,
+        is_active=student.is_active,
     )
 
     db.add(db_student)
@@ -274,12 +187,20 @@ async def create_student(
 )
 async def list_students(
     offset: int = Query(0, ge=0, description='Número de registros para pular'),
-    limit: int = Query(100, ge=1, le=100, description='Limite de registros por página'),
-    search: Optional[str] = Query(None, description='Buscar por CPF, nome, e-mail ou contato de emergência'),
+    limit: int = Query(
+        100,
+        ge=1,
+        le=100,
+        description='Limite de registros por página'
+    ),
+    search: Optional[str] = Query(
+        None,
+        description='Buscar por CPF, nome, e-mail ou contato de emergência'
+    ),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session)
 ):
-    query = select(Student).where(Student.is_active == True)
+    query = select(Student).where(Student.is_active)
 
     if search:
         search_filter = f'%{search}%'
@@ -388,18 +309,16 @@ async def delete_student(
             detail='Estudante não encontrado',
         )
 
-    if student.is_active == False:
+    if student.is_active:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail='Estudante já deletado',
         )
-    
+
     student.is_active = False
 
     db.add(student)
     await db.commit()
-
-    return
 
 
 @teachers_router.post(
@@ -454,13 +373,13 @@ async def create_teacher(
         )
 
     db_techer = Teacher(
-        user_id = teacher.user_id,
-        full_name = teacher.full_name,
-        cref = teacher.cref,
-        phone = teacher.phone,
-        email = teacher.email,
-        specialty = teacher.specialty,
-        is_active = teacher.is_active,
+        user_id=teacher.user_id,
+        full_name=teacher.full_name,
+        cref=teacher.cref,
+        phone=teacher.phone,
+        email=teacher.email,
+        specialty=teacher.specialty,
+        is_active=teacher.is_active,
     )
 
     db.add(db_techer)
@@ -478,19 +397,24 @@ async def create_teacher(
 )
 async def list_teachers(
     offset: int = Query(0, ge=0, description='Número de registros para pular'),
-    limit: int = Query(100, ge=1, le=100, description='Limite de registros por página'),
-    search: Optional[str] = Query(None, description='Buscar por CREF, nome, e-mail ou telefone'),
+    limit: int = Query(
+        100, ge=1, le=100, description='Limite de registros por página'
+    ),
+    search: Optional[str] = Query(
+        None,
+        description='Buscar por CREF, nome, e-mail ou telefone'
+    ),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
-    query = select(Teacher).where(Teacher.is_active == True)
+    query = select(Teacher).where(Teacher.is_active)
 
     if search:
         search_fielter = f'%{search}%'
         query = query.where(Teacher.cref.ilike(search_fielter) |
                 Teacher.full_name.ilike(search_fielter) |
                 Teacher.email.ilike(search_fielter) |
-                Teacher.phone.ilike(search_fielter) 
+                Teacher.phone.ilike(search_fielter)
             )
 
     query = query.offset(offset).limit(limit)
@@ -608,15 +532,13 @@ async def delete_teacher(
             detail='Professor não encontrado',
         )
 
-    if teacher.is_active == False:
+    if teacher.is_active:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail='Professor já deletado',
         )
-    
+
     teacher.is_active = False
 
     db.add(teacher)
     await db.commit()
-
-    return

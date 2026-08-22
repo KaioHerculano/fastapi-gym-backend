@@ -1,11 +1,11 @@
-from typing import Optional, List
+import re
+from datetime import date, datetime
+from typing import List, Optional
 from uuid import UUID
 
-from datetime import datetime, date
 from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
 
 from app.models.accounts import RoleEnum
-import re
 
 
 class UserCreateSchema(BaseModel):
@@ -19,7 +19,9 @@ class UserCreateSchema(BaseModel):
         if len(value) < 8:
             raise ValueError('Password deve ter no minimo 8 caracteres')
         if not re.search('[a-z]', value):
-            raise ValueError('Password deve conter pelo menos uma letra minuscula')
+            raise ValueError(
+                'Password deve conter pelo menos uma letra minuscula'
+            )
         return value
 
 
@@ -36,7 +38,9 @@ class UserUpdateSchema(BaseModel):
         if len(value) < 8:
             raise ValueError('Password deve ter no minimo 8 caracteres')
         if not re.search("[a-z]", value):
-            raise ValueError('Password deve conter pelo menos uma letra minuscula')
+            raise ValueError(
+                'Password deve conter pelo menos uma letra minuscula'
+            )
         return value
 
 
@@ -91,7 +95,9 @@ class StudentCreateSchema(BaseModel):
 
         today = date.today()
 
-        age = today.year - value.year - ((today.month, today.day) < (value.month, value.day))
+        age = today.year - value.year - (
+            (today.month, today.day) < (value.month, value.day)
+        )
 
         if age < 14:
             raise ValueError('O aluno deve ter no minimo 14 anos de idade')
@@ -100,7 +106,7 @@ class StudentCreateSchema(BaseModel):
 
     @field_validator('phone')
     def validate_phone(cls, value: str) -> str:
-        if len(value) not in [10, 11]:
+        if len(value) not in {10, 11}:
             raise ValueError('Telefone deve ter 10 ou 11 digitos')
         if not value.isdigit():
             raise ValueError('Telefone deve conter apenas digitos')
@@ -136,7 +142,9 @@ class StudentUpdateSchema(BaseModel):
 
         today = date.today()
 
-        age = today.year - value.year - ((today.month, today.day) < (value.month, value.day))
+        age = today.year - value.year - (
+            (today.month, today.day) < (value.month, value.day)
+        )
 
         if age < 14:
             raise ValueError('O aluno deve ter no minimo 14 anos de idade')
@@ -147,7 +155,7 @@ class StudentUpdateSchema(BaseModel):
     def validate_phone(cls, value: str) -> str:
         if value is None:
             return value
-        if len(value) not in [10, 11]:
+        if len(value) not in {10, 11}:
             raise ValueError('Telefone deve ter 10 ou 11 digitos')
         if not value.isdigit():
             raise ValueError('Telefone deve conter apenas digitos')
@@ -200,7 +208,7 @@ class TeacherCreateSchema(BaseModel):
 
     @field_validator('phone')
     def validate_phone(cls, value: str) -> str:
-        if len(value) not in [10, 11]:
+        if len(value) not in {10, 11}:
             raise ValueError('Telefone deve ter 10 ou 11 digitos')
         if not value.isdigit():
             raise ValueError('Telefone deve conter apenas digitos')
@@ -226,7 +234,7 @@ class TeacherUpdateSchema(BaseModel):
     def validate_phone(cls, value: str) -> str:
         if value is None:
             return value
-        if len(value) not in [10, 11]:
+        if len(value) not in {10, 11}:
             raise ValueError('Telefone deve ter 10 ou 11 digitos')
         if not value.isdigit():
             raise ValueError('Telefone deve conter apenas digitos')

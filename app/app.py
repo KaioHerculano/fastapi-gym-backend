@@ -1,6 +1,6 @@
 from fastapi import FastAPI, status
-from app.routers import accounts, auth
 
+from app.routers import accounts, auth
 
 app = FastAPI()
 
@@ -28,8 +28,9 @@ app.include_router(
     tags=['teachers'],
 )
 
+
 @app.get(
-    path = '/health_check',
+    path='/health_check',
     status_code=status.HTTP_200_OK,
 )
 def read_root():
