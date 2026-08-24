@@ -76,3 +76,13 @@ async def delete_user(
 
     db.add(user)
     await db.commit()
+
+
+async def check_user_exists(
+    db: AsyncSession,
+    user_id: UUID
+) -> bool:
+
+    query = select(exists().where(User.id == user_id))
+
+    return await db.scalar(query)
