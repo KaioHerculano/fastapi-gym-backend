@@ -96,3 +96,13 @@ async def check_student_user_id_exists(
     query = select(exists().where(Student.user_id == user_id))
 
     return await db.scalar(query)
+
+
+async def check_student_cpf_exists(
+    db: AsyncSession,
+    cpf: str
+) -> bool:
+
+    query = select(exists().where(Student.cpf == cpf))
+
+    return await db.scalar(query)
