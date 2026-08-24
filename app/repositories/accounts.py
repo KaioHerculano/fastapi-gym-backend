@@ -4,7 +4,7 @@ from uuid import UUID
 from sqlalchemy import exists, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.accounts import User
+from app.models.accounts import User, Student
 
 
 async def user_email_exists(
@@ -84,5 +84,15 @@ async def check_user_exists(
 ) -> bool:
 
     query = select(exists().where(User.id == user_id))
+
+    return await db.scalar(query)
+
+
+async def check_student_user_id_exists(
+    db: AsyncSession,
+    user_id: UUID 
+) -> bool:
+
+    query = select(exists().where(Student.user_id == user_id))
 
     return await db.scalar(query)
