@@ -5,24 +5,26 @@ from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import get_password_hash
-from app.models.accounts import User, Student
+from app.models.accounts import Student, User
+from app.repositories.accounts import (
+    check_student_cpf_exists,
+    check_student_email_exists,
+    check_student_user_id_exists,
+    check_user_exists,
+    user_email_exists,
+)
+from app.repositories.accounts import (
+    create_student as create_student_repository,
+)
 from app.repositories.accounts import create_user as create_user_repository
 from app.repositories.accounts import delete_user as delete_user_repository
 from app.repositories.accounts import get_user as get_user_repository
 from app.repositories.accounts import list_users as list_users_repository
 from app.repositories.accounts import update_user as update_user_repository
-from app.repositories.accounts import (
-    user_email_exists,
-    check_user_exists,
-    check_student_cpf_exists,
-    check_student_email_exists,
-    check_student_user_id_exists
-)
-from app.repositories.accounts import create_student as create_student_repository
 from app.schemas.accounts import (
+    StudentCreateSchema,
     UserCreateSchema,
     UserUpdateSchema,
-    StudentCreateSchema
 )
 
 

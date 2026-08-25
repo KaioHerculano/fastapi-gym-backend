@@ -22,12 +22,11 @@ from app.schemas.accounts import (
     UserPublicSchema,
     UserUpdateSchema,
 )
+from app.services.accounts import create_student as create_student_service
 from app.services.accounts import create_user as create_user_service
 from app.services.accounts import get_user as get_user_service
 from app.services.accounts import list_users as list_users_service
 from app.services.accounts import update_user as update_user_service
-
-from app.services.accounts import create_student as create_student_service
 
 users_router = APIRouter(prefix="/users",)
 students_router = APIRouter(prefix="/students",)
