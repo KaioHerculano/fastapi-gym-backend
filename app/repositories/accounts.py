@@ -106,3 +106,32 @@ async def check_student_cpf_exists(
     query = select(exists().where(Student.cpf == cpf))
 
     return await db.scalar(query)
+
+
+async def check_student_email_exists(
+    db: AsyncSession,
+    email: str,
+    exclude_student_id: Optional[UUID] = None
+) -> bool:
+
+    query = select(exists().where(Student.email == email))
+
+    if exclude_student_id:
+        query = select(exists().where(
+            (Student.email == email) &
+            (Student.id != exclude_student_id)
+        ))
+
+    return await db.scalar(query)
+
+
+async def create_student(
+    db: AsyncSession,
+    student: Student
+) -> Student:
+
+    db.add(student)
+    await db.commit()
+    await db.refresh(student)
+
+    return student
