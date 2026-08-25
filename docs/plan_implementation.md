@@ -50,8 +50,8 @@ Objetivo: alinhar o projeto com a propria documentacao, que pede routers sem reg
 - [x] Criar pacote `app/services/`.
 - [x] Extrair queries de usuario para `accounts_repository`.
 - [x] Extrair regras de usuario para `accounts_service`.
-- [ ] Extrair queries de aluno para `accounts_repository`.
-- [ ] Extrair regras de aluno para `accounts_service`.
+- [~] Extrair queries de aluno para `accounts_repository` (create concluído).
+- [~] Extrair regras de aluno para `accounts_service` (create concluído).
 - [ ] Extrair queries de professor para `accounts_repository`.
 - [ ] Extrair regras de professor para `accounts_service`.
 - [ ] Manter routers apenas recebendo request, chamando service e retornando response.
