@@ -27,6 +27,8 @@ from app.services.accounts import get_user as get_user_service
 from app.services.accounts import list_users as list_users_service
 from app.services.accounts import update_user as update_user_service
 
+from app.services.accounts import create_student as create_student_service
+
 users_router = APIRouter(prefix="/users",)
 students_router = APIRouter(prefix="/students",)
 teachers_router = APIRouter(prefix="/teachers",)
@@ -118,65 +120,7 @@ async def create_student(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
-    if student.user_id:
-        user_exist = await db.scalar(
-            select(exists().where(User.id == student.user_id))
-        )
-
-        if not user_exist:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail='Usuário não encontrado',
-            )
-
-    if student.user_id is not None:
-        user_id_exist = await db.scalar(
-            select(exists().where(Student.user_id == student.user_id))
-        )
-
-        if user_id_exist:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail='Conta já vinculada a outro estudante',
-            )
-
-    cpf_exist = await db.scalar(
-        select(exists().where(Student.cpf == student.cpf))
-    )
-
-    if cpf_exist:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail='CPF já cadastrado',
-        )
-
-    email_exist = await db.scalar(
-        select(exists().where(Student.email == student.email))
-    )
-
-    if email_exist:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail='E-mail já cadastrado',
-        )
-
-    db_student = Student(
-        user_id=student.user_id,
-        full_name=student.full_name,
-        cpf=student.cpf,
-        birth_date=student.birth_date,
-        phone=student.phone,
-        email=student.email,
-        emergency_contact_name=student.emergency_contact_name,
-        emergency_contact_phone=student.emergency_contact_phone,
-        is_active=student.is_active,
-    )
-
-    db.add(db_student)
-    await db.commit()
-    await db.refresh(db_student)
-
-    return db_student
+    return await create_student_service(db, student)
 
 
 @students_router.get(
