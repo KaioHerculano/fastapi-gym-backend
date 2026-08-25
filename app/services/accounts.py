@@ -5,14 +5,27 @@ from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import get_password_hash
-from app.models.accounts import User
+from app.models.accounts import Student, User
+from app.repositories.accounts import (
+    check_student_cpf_exists,
+    check_student_email_exists,
+    check_student_user_id_exists,
+    check_user_exists,
+    user_email_exists,
+)
+from app.repositories.accounts import (
+    create_student as create_student_repository,
+)
 from app.repositories.accounts import create_user as create_user_repository
 from app.repositories.accounts import delete_user as delete_user_repository
 from app.repositories.accounts import get_user as get_user_repository
 from app.repositories.accounts import list_users as list_users_repository
 from app.repositories.accounts import update_user as update_user_repository
-from app.repositories.accounts import user_email_exists
-from app.schemas.accounts import UserCreateSchema, UserUpdateSchema
+from app.schemas.accounts import (
+    StudentCreateSchema,
+    UserCreateSchema,
+    UserUpdateSchema,
+)
 
 
 async def create_user(
@@ -120,3 +133,55 @@ async def delete_user(
     user.is_active = False
 
     return await delete_user_repository(db, user)
+
+
+async def create_student(
+    db: AsyncSession,
+    student: StudentCreateSchema
+):
+    if student.user_id:
+        user_exist = await check_user_exists(db, student.user_id)
+
+        if not user_exist:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail='Usuário não encontrado',
+            )
+
+        user_id_exist = await check_student_user_id_exists(db, student.user_id)
+
+        if user_id_exist:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail='Conta já vinculada a outro estudante',
+            )
+
+    cpf_exist = await check_student_cpf_exists(db, student.cpf)
+
+    if cpf_exist:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail='CPF já cadastrado',
+        )
+
+    email_exist = await check_student_email_exists(db, student.email)
+
+    if email_exist:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail='E-mail já cadastrado',
+        )
+
+    db_student = Student(
+        user_id=student.user_id,
+        full_name=student.full_name,
+        cpf=student.cpf,
+        birth_date=student.birth_date,
+        phone=student.phone,
+        email=student.email,
+        emergency_contact_name=student.emergency_contact_name,
+        emergency_contact_phone=student.emergency_contact_phone,
+        is_active=student.is_active,
+    )
+
+    return await create_student_repository(db, db_student)
