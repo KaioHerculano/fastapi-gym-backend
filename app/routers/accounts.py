@@ -23,6 +23,7 @@ from app.schemas.accounts import (
     UserUpdateSchema,
 )
 from app.services.accounts import create_student as create_student_service
+from app.services.accounts import list_students as list_students_service
 from app.services.accounts import create_user as create_user_service
 from app.services.accounts import get_user as get_user_service
 from app.services.accounts import list_users as list_users_service
@@ -143,26 +144,7 @@ async def list_students(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session)
 ):
-    query = select(Student).where(Student.is_active)
-
-    if search:
-        search_filter = f'%{search}%'
-        query = query.where(Student.cpf.ilike(search_filter) |
-                Student.full_name.ilike(search_filter) |
-                Student.email.ilike(search_filter) |
-                Student.emergency_contact_name.ilike(search_filter)
-            )
-
-    query = query.offset(offset).limit(limit)
-
-    result = await db.execute(query)
-    students = result.scalars().all()
-
-    return {
-        'students': students,
-        'offset': offset,
-        'limit': limit,
-    }
+    return await list_students_service(db, offset, limit, search)
 
 
 @students_router.get(

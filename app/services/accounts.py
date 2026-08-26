@@ -16,6 +16,10 @@ from app.repositories.accounts import (
 from app.repositories.accounts import (
     create_student as create_student_repository,
 )
+from app.repositories.accounts import (
+    list_students as list_students_repository,
+)
+
 from app.repositories.accounts import create_user as create_user_repository
 from app.repositories.accounts import delete_user as delete_user_repository
 from app.repositories.accounts import get_user as get_user_repository
@@ -185,3 +189,18 @@ async def create_student(
     )
 
     return await create_student_repository(db, db_student)
+
+
+async def list_students(
+    db: AsyncSession,
+    offset: int,
+    limit: int,
+    search: Optional[str] = None,
+):
+    students = await list_students_repository(db, offset, limit, search)
+
+    return {
+        'students': students,
+        'offset': offset,
+        'limit': limit,
+    }

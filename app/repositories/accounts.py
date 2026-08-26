@@ -135,3 +135,25 @@ async def create_student(
     await db.refresh(student)
 
     return student
+
+async def list_students(
+    db: AsyncSession,
+    offset: int,
+    limit: int,
+    search: Optional[str] = None,
+) -> Student:
+
+    query = select(Student).where(Student.is_active)
+
+    if search:
+        search_filter = f'%{search}%'
+        query = query.where(Student.cpf.ilike(search_filter) |
+                Student.full_name.ilike(search_filter) |
+                Student.email.ilike(search_filter) |
+                Student.emergency_contact_name.ilike(search_filter)
+            )
+    
+    query = query.offset(offset).limit(limit)
+    
+    result = await db.execute(query)
+    return list(result.scalars().all())
