@@ -16,13 +16,13 @@ from app.repositories.accounts import (
 from app.repositories.accounts import (
     create_student as create_student_repository,
 )
+from app.repositories.accounts import create_user as create_user_repository
+from app.repositories.accounts import delete_user as delete_user_repository
+from app.repositories.accounts import get_student as get_student_repository
+from app.repositories.accounts import get_user as get_user_repository
 from app.repositories.accounts import (
     list_students as list_students_repository,
 )
-
-from app.repositories.accounts import create_user as create_user_repository
-from app.repositories.accounts import delete_user as delete_user_repository
-from app.repositories.accounts import get_user as get_user_repository
 from app.repositories.accounts import list_users as list_users_repository
 from app.repositories.accounts import update_user as update_user_repository
 from app.schemas.accounts import (
@@ -204,3 +204,18 @@ async def list_students(
         'offset': offset,
         'limit': limit,
     }
+
+
+async def get_student(
+    db: AsyncSession,
+    student_id: UUID
+):
+    student = await get_student_repository(db, student_id)
+
+    if not student:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail='Estudante não encontrado',
+        )
+
+    return student

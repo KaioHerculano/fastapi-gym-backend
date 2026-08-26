@@ -136,6 +136,7 @@ async def create_student(
 
     return student
 
+
 async def list_students(
     db: AsyncSession,
     offset: int,
@@ -152,8 +153,15 @@ async def list_students(
                 Student.email.ilike(search_filter) |
                 Student.emergency_contact_name.ilike(search_filter)
             )
-    
+
     query = query.offset(offset).limit(limit)
-    
+
     result = await db.execute(query)
     return list(result.scalars().all())
+
+
+async def get_student(
+    db: AsyncSession,
+    student_id: UUID
+) -> Optional[Student]:
+    return await db.get(Student, student_id)

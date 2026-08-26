@@ -23,9 +23,10 @@ from app.schemas.accounts import (
     UserUpdateSchema,
 )
 from app.services.accounts import create_student as create_student_service
-from app.services.accounts import list_students as list_students_service
 from app.services.accounts import create_user as create_user_service
+from app.services.accounts import get_student as get_student_service
 from app.services.accounts import get_user as get_user_service
+from app.services.accounts import list_students as list_students_service
 from app.services.accounts import list_users as list_users_service
 from app.services.accounts import update_user as update_user_service
 
@@ -158,15 +159,7 @@ async def get_student(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
-    student = await db.get(Student, student_id)
-
-    if not student:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail='Estudante não encontrado',
-        )
-
-    return student
+    return await get_student_service(db, student_id)
 
 
 @students_router.patch(
