@@ -4,11 +4,7 @@ from app.routers import accounts, auth
 
 app = FastAPI()
 
-app.include_router(
-    router=auth.router,
-    prefix='/api/v1',
-    tags=['login']
-)
+app.include_router(router=auth.router, prefix='/api/v1', tags=['login'])
 
 app.include_router(
     router=accounts.users_router,

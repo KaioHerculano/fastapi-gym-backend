@@ -42,8 +42,7 @@ class Student(Base):
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     user_id: Mapped[UUID | None] = mapped_column(
-        ForeignKey('users.id'),
-        unique=True
+        ForeignKey('users.id'), unique=True
     )
     full_name: Mapped[str] = mapped_column(String(150))
     cpf: Mapped[str] = mapped_column(String(11), unique=True)
@@ -67,8 +66,7 @@ class Teacher(Base):
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     user_id: Mapped[UUID | None] = mapped_column(
-        ForeignKey('users.id'),
-        unique=True
+        ForeignKey('users.id'), unique=True
     )
     full_name: Mapped[str] = mapped_column(String(150))
     cref: Mapped[str] = mapped_column(String(20), unique=True)

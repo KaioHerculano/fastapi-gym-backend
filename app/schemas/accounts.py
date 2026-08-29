@@ -31,13 +31,13 @@ class UserUpdateSchema(BaseModel):
     role: Optional[RoleEnum] = None
     is_active: Optional[bool] = None
 
-    @field_validator("password")
+    @field_validator('password')
     def validate_password(cls, value: str) -> str:
         if value is None:
             return value
         if len(value) < 8:
             raise ValueError('Password deve ter no minimo 8 caracteres')
-        if not re.search("[a-z]", value):
+        if not re.search('[a-z]', value):
             raise ValueError(
                 'Password deve conter pelo menos uma letra minuscula'
             )
@@ -77,7 +77,7 @@ class StudentCreateSchema(BaseModel):
             raise ValueError('Nome deve ter no minimo 3 caracteres')
         return value
 
-    @field_validator("cpf")
+    @field_validator('cpf')
     def validate_cpf(cls, value: str) -> str:
         if len(value) != 11:
             raise ValueError('CPF deve ter 11 digitos')
@@ -95,8 +95,10 @@ class StudentCreateSchema(BaseModel):
 
         today = date.today()
 
-        age = today.year - value.year - (
-            (today.month, today.day) < (value.month, value.day)
+        age = (
+            today.year
+            - value.year
+            - ((today.month, today.day) < (value.month, value.day))
         )
 
         if age < 14:
@@ -142,8 +144,10 @@ class StudentUpdateSchema(BaseModel):
 
         today = date.today()
 
-        age = today.year - value.year - (
-            (today.month, today.day) < (value.month, value.day)
+        age = (
+            today.year
+            - value.year
+            - ((today.month, today.day) < (value.month, value.day))
         )
 
         if age < 14:

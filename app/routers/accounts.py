@@ -29,17 +29,24 @@ from app.services.accounts import get_user as get_user_service
 from app.services.accounts import list_students as list_students_service
 from app.services.accounts import list_users as list_users_service
 from app.services.accounts import update_user as update_user_service
+from app.services.accounts import updated_student as updated_student_service
 
-users_router = APIRouter(prefix="/users",)
-students_router = APIRouter(prefix="/students",)
-teachers_router = APIRouter(prefix="/teachers",)
+users_router = APIRouter(
+    prefix='/users',
+)
+students_router = APIRouter(
+    prefix='/students',
+)
+teachers_router = APIRouter(
+    prefix='/teachers',
+)
 
 
 @users_router.post(
     path='/',
     status_code=status.HTTP_201_CREATED,
     response_model=UserPublicSchema,
-    summary='Criar novo usuário'
+    summary='Criar novo usuário',
 )
 async def create_user(
     user: UserCreateSchema,
@@ -61,7 +68,7 @@ async def list_users(
     ),
     search: Optional[str] = Query(None, description='Buscar por e-mail'),
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_session)
+    db: AsyncSession = Depends(get_session),
 ):
     return await list_users_service(db, offset, limit, search)
 
@@ -133,17 +140,14 @@ async def create_student(
 async def list_students(
     offset: int = Query(0, ge=0, description='Número de registros para pular'),
     limit: int = Query(
-        100,
-        ge=1,
-        le=100,
-        description='Limite de registros por página'
+        100, ge=1, le=100, description='Limite de registros por página'
     ),
     search: Optional[str] = Query(
         None,
-        description='Buscar por CPF, nome, e-mail ou contato de emergência'
+        description='Buscar por CPF, nome, e-mail ou contato de emergência',
     ),
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_session)
+    db: AsyncSession = Depends(get_session),
 ):
     return await list_students_service(db, offset, limit, search)
 
@@ -174,39 +178,7 @@ async def updated_student(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
-    student = await db.get(Student, student_id)
-
-    if not student:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail='Estudante não encontrado',
-        )
-
-    update_data = student_update.model_dump(exclude_unset=True)
-
-    if 'email' in update_data and update_data['email'] != student.email:
-        email_exists = await db.scalar(
-            select(
-                exists().where(
-                    (Student.email == update_data['email']) &
-                    (Student.id != student_id)
-                )
-            )
-        )
-
-        if email_exists:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail='E-mail já cadastrado',
-            )
-
-    for field, value in update_data.items():
-        setattr(student, field, value)
-
-    await db.commit()
-    await db.refresh(student)
-
-    return student
+    return await updated_student_service(db, student_update, student_id)
 
 
 @students_router.delete(
@@ -319,8 +291,7 @@ async def list_teachers(
         100, ge=1, le=100, description='Limite de registros por página'
     ),
     search: Optional[str] = Query(
-        None,
-        description='Buscar por CREF, nome, e-mail ou telefone'
+        None, description='Buscar por CREF, nome, e-mail ou telefone'
     ),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
@@ -329,11 +300,12 @@ async def list_teachers(
 
     if search:
         search_fielter = f'%{search}%'
-        query = query.where(Teacher.cref.ilike(search_fielter) |
-                Teacher.full_name.ilike(search_fielter) |
-                Teacher.email.ilike(search_fielter) |
-                Teacher.phone.ilike(search_fielter)
-            )
+        query = query.where(
+            Teacher.cref.ilike(search_fielter)
+            | Teacher.full_name.ilike(search_fielter)
+            | Teacher.email.ilike(search_fielter)
+            | Teacher.phone.ilike(search_fielter)
+        )
 
     query = query.offset(offset).limit(limit)
 
@@ -395,8 +367,8 @@ async def updated_teacher(
         cref_exists = await db.scalar(
             select(
                 exists().where(
-                    (Teacher.cref == update_data['cref']) &
-                    (Teacher.id != teacher_id)
+                    (Teacher.cref == update_data['cref'])
+                    & (Teacher.id != teacher_id)
                 )
             )
         )
@@ -411,8 +383,8 @@ async def updated_teacher(
         email_exists = await db.scalar(
             select(
                 exists().where(
-                    (Teacher.email == update_data['email']) &
-                    (Teacher.id != teacher_id)
+                    (Teacher.email == update_data['email'])
+                    & (Teacher.id != teacher_id)
                 )
             )
         )

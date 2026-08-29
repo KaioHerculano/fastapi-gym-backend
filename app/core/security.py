@@ -61,9 +61,7 @@ def verify_token(token: str) -> Dict:
 
 
 async def authenticate_user(
-    email: str,
-    password: str,
-    db: AsyncSession
+    email: str, password: str, db: AsyncSession
 ) -> Optional[User]:
     result = await db.execute(select(User).where(User.email == email))
     user = result.scalar_one_or_none()
