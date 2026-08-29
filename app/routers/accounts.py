@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
 from app.core.security import get_current_user
-from app.models.accounts import Student, Teacher, User
+from app.models.accounts import Teacher, User
 from app.schemas.accounts import (
     StudentCreateSchema,
     StudentListPublicSchema,
@@ -24,14 +24,14 @@ from app.schemas.accounts import (
 )
 from app.services.accounts import create_student as create_student_service
 from app.services.accounts import create_user as create_user_service
+from app.services.accounts import delete_student as delete_student_service
+from app.services.accounts import delete_user as delete_user_service
 from app.services.accounts import get_student as get_student_service
 from app.services.accounts import get_user as get_user_service
 from app.services.accounts import list_students as list_students_service
 from app.services.accounts import list_users as list_users_service
 from app.services.accounts import update_user as update_user_service
 from app.services.accounts import updated_student as updated_student_service
-from app.services.accounts import delete_user as delete_user_service
-from app.services.accounts import delete_student as delete_student_service
 
 users_router = APIRouter(
     prefix='/users',

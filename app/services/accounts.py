@@ -17,8 +17,10 @@ from app.repositories.accounts import (
     create_student as create_student_repository,
 )
 from app.repositories.accounts import create_user as create_user_repository
+from app.repositories.accounts import (
+    delete_student as delete_student_repository,
+)
 from app.repositories.accounts import delete_user as delete_user_repository
-from app.repositories.accounts import delete_student as delete_student_repository
 from app.repositories.accounts import get_student as get_student_repository
 from app.repositories.accounts import get_user as get_user_repository
 from app.repositories.accounts import (
@@ -250,10 +252,7 @@ async def updated_student(
     return await updated_student_repository(db, student)
 
 
-async def delete_student(
-    db: AsyncSession,
-    student_id: UUID
-):
+async def delete_student(db: AsyncSession, student_id: UUID):
     student = await get_student_repository(db, student_id)
 
     if not student:
