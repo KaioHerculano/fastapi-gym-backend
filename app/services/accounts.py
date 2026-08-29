@@ -17,12 +17,23 @@ from app.repositories.accounts import (
     create_student as create_student_repository,
 )
 from app.repositories.accounts import create_user as create_user_repository
+from app.repositories.accounts import (
+    delete_student as delete_student_repository,
+)
 from app.repositories.accounts import delete_user as delete_user_repository
+from app.repositories.accounts import get_student as get_student_repository
 from app.repositories.accounts import get_user as get_user_repository
+from app.repositories.accounts import (
+    list_students as list_students_repository,
+)
 from app.repositories.accounts import list_users as list_users_repository
 from app.repositories.accounts import update_user as update_user_repository
+from app.repositories.accounts import (
+    updated_student as updated_student_repository,
+)
 from app.schemas.accounts import (
     StudentCreateSchema,
+    StudentUpdateSchema,
     UserCreateSchema,
     UserUpdateSchema,
 )
@@ -98,9 +109,7 @@ async def update_user(
 
     if 'email' in update_data and update_data['email'] != user.email:
         email_exists = await user_email_exists(
-            db,
-            update_data['email'],
-            exclude_user_id=user_id
+            db, update_data['email'], exclude_user_id=user_id
         )
 
         if email_exists:
@@ -135,10 +144,7 @@ async def delete_user(
     return await delete_user_repository(db, user)
 
 
-async def create_student(
-    db: AsyncSession,
-    student: StudentCreateSchema
-):
+async def create_student(db: AsyncSession, student: StudentCreateSchema):
     if student.user_id:
         user_exist = await check_user_exists(db, student.user_id)
 
@@ -185,3 +191,82 @@ async def create_student(
     )
 
     return await create_student_repository(db, db_student)
+
+
+async def list_students(
+    db: AsyncSession,
+    offset: int,
+    limit: int,
+    search: Optional[str] = None,
+):
+    students = await list_students_repository(db, offset, limit, search)
+
+    return {
+        'students': students,
+        'offset': offset,
+        'limit': limit,
+    }
+
+
+async def get_student(db: AsyncSession, student_id: UUID):
+    student = await get_student_repository(db, student_id)
+
+    if not student:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail='Estudante não encontrado',
+        )
+
+    return student
+
+
+async def updated_student(
+    db: AsyncSession,
+    student_update: StudentUpdateSchema,
+    student_id: UUID,
+):
+    student = await get_student(db, student_id)
+
+    if not student:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail='Estudante não encontrado',
+        )
+
+    update_data = student_update.model_dump(exclude_unset=True)
+
+    if 'email' in update_data and update_data['email'] != student.email:
+        email_exists = await check_student_email_exists(
+            db, update_data['email'], exclude_student_id=student_id
+        )
+
+        if email_exists:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail='E-mail já cadastrado',
+            )
+
+    for field, value in update_data.items():
+        setattr(student, field, value)
+
+    return await updated_student_repository(db, student)
+
+
+async def delete_student(db: AsyncSession, student_id: UUID):
+    student = await get_student_repository(db, student_id)
+
+    if not student:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail='Estudante não encontrado',
+        )
+
+    if not student.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail='Estudante já deletado',
+        )
+
+    student.is_active = False
+
+    return await delete_student_repository(db, student)
