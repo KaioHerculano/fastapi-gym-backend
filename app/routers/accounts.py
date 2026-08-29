@@ -30,6 +30,8 @@ from app.services.accounts import list_students as list_students_service
 from app.services.accounts import list_users as list_users_service
 from app.services.accounts import update_user as update_user_service
 from app.services.accounts import updated_student as updated_student_service
+from app.services.accounts import delete_user as delete_user_service
+from app.services.accounts import delete_student as delete_student_service
 
 users_router = APIRouter(
     prefix='/users',
@@ -114,7 +116,7 @@ async def delete_user(
     db: AsyncSession = Depends(get_session),
 ):
 
-    return await update_user_service(db, user_id)
+    return await delete_user_service(db, user_id)
 
 
 @students_router.post(
@@ -191,24 +193,8 @@ async def delete_student(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
-    student = await db.get(Student, student_id)
 
-    if not student:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail='Estudante não encontrado',
-        )
-
-    if student.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail='Estudante já deletado',
-        )
-
-    student.is_active = False
-
-    db.add(student)
-    await db.commit()
+    return await delete_student_service(db, student_id)
 
 
 @teachers_router.post(

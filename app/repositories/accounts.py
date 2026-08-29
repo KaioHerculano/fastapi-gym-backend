@@ -157,3 +157,12 @@ async def updated_student(db: AsyncSession, student: Student) -> Student:
     await db.refresh(student)
 
     return student
+
+
+async def delete_student(
+    db: AsyncSession,
+    student: Student
+):
+
+    db.add(student)
+    await db.commit()
