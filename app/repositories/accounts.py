@@ -4,7 +4,7 @@ from uuid import UUID
 from sqlalchemy import exists, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.accounts import Student, User
+from app.models.accounts import Student, User, Teacher
 
 
 async def user_email_exists(
@@ -163,3 +163,58 @@ async def delete_student(db: AsyncSession, student: Student):
 
     db.add(student)
     await db.commit()
+
+
+async def check_teacher_user_id_exists(
+    db: AsyncSession,
+    user_id: UUID
+) -> bool:
+
+    query = select(exists().where(Teacher.user_id == user_id))
+
+    return await db.scalar(query)
+
+
+async def check_teacher_cref_exists(
+    db: AsyncSession,
+    cref: str,
+    exclude_teacher_id: Optional[UUID] = None
+) -> bool:
+
+    query = select(exists().where(Teacher.cref == cref))
+
+    if exclude_teacher_id:
+        query = select(exists().where(
+            (Teacher.cref == cref) &
+            (Teacher.id != exclude_teacher_id)
+        ))
+
+    return await db.scalar(query)
+
+
+async def check_teacher_email_exists(
+    db: AsyncSession,
+    email: str,
+    exclude_teacher_id: Optional[UUID] = None
+) -> bool:
+
+    query = select(exists().where(Teacher.email == email))
+
+    if exclude_teacher_id:
+        query = select(exists().where(
+            (Teacher.email == email) &
+            (Teacher.id != exclude_teacher_id)
+        ))
+
+    return await db.scalar(query)
+
+
+async def create_teacher(
+    db: AsyncSession,
+    teacher: Teacher
+) -> Teacher:
+
+    db.add(teacher)
+    await db.commit()
+    await db.refresh(teacher)
+    return teacher

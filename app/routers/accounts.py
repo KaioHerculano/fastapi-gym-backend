@@ -32,6 +32,7 @@ from app.services.accounts import list_students as list_students_service
 from app.services.accounts import list_users as list_users_service
 from app.services.accounts import update_user as update_user_service
 from app.services.accounts import updated_student as updated_student_service
+from app.services.accounts import create_teacher as create_teacher_service
 
 users_router = APIRouter(
     prefix='/users',
@@ -208,61 +209,7 @@ async def create_teacher(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
-    teacher_user_exist = await db.scalar(
-        select(exists().where(User.id == teacher.user_id))
-    )
-
-    if not teacher_user_exist:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail='Usuário não encontrado',
-        )
-
-    teacher_user_id_exist = await db.scalar(
-        select(exists().where(Teacher.user_id == teacher.user_id))
-    )
-
-    if teacher_user_id_exist:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail='Conta já vinculada a outro professor',
-        )
-
-    cref_exist = await db.scalar(
-        select(exists().where(Teacher.cref == teacher.cref))
-    )
-
-    if cref_exist:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail='CREF já cadastrado',
-        )
-
-    email_exist = await db.scalar(
-        select(exists().where(Teacher.email == teacher.email))
-    )
-
-    if email_exist:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail='E-mail já cadastrado',
-        )
-
-    db_techer = Teacher(
-        user_id=teacher.user_id,
-        full_name=teacher.full_name,
-        cref=teacher.cref,
-        phone=teacher.phone,
-        email=teacher.email,
-        specialty=teacher.specialty,
-        is_active=teacher.is_active,
-    )
-
-    db.add(db_techer)
-    await db.commit()
-    await db.refresh(db_techer)
-
-    return db_techer
+    return await create_teacher_service(db, teacher)
 
 
 @teachers_router.get(
