@@ -2,7 +2,6 @@ from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import exists, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
@@ -35,6 +34,7 @@ from app.services.accounts import list_teachers as list_teachers_service
 from app.services.accounts import list_users as list_users_service
 from app.services.accounts import update_user as update_user_service
 from app.services.accounts import updated_student as updated_student_service
+from app.services.accounts import updated_teacher as updated_teacher_service
 
 users_router = APIRouter(
     prefix='/users',
@@ -262,55 +262,8 @@ async def updated_teacher(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
-    teacher = await db.get(Teacher, teacher_id)
 
-    if not teacher:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail='Professor não encontrado',
-        )
-
-    update_data = teacher_update.model_dump(exclude_unset=True)
-
-    if 'cref' in update_data and update_data['cref'] != teacher.cref:
-        cref_exists = await db.scalar(
-            select(
-                exists().where(
-                    (Teacher.cref == update_data['cref'])
-                    & (Teacher.id != teacher_id)
-                )
-            )
-        )
-
-        if cref_exists:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail='CREF já cadastrado',
-            )
-
-    if 'email' in update_data and update_data['email'] != teacher.email:
-        email_exists = await db.scalar(
-            select(
-                exists().where(
-                    (Teacher.email == update_data['email'])
-                    & (Teacher.id != teacher_id)
-                )
-            )
-        )
-
-        if email_exists:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail='E-mail já cadastrado',
-            )
-
-    for fild, value in update_data.items():
-        setattr(teacher, fild, value)
-
-    await db.commit()
-    await db.refresh(teacher)
-
-    return teacher
+    return await updated_teacher_service(db, teacher_update, teacher_id)
 
 
 @teachers_router.delete(

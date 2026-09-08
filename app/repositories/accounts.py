@@ -53,7 +53,7 @@ async def get_user(db: AsyncSession, user_id: UUID) -> Optional[User]:
     return await db.get(User, user_id)
 
 
-async def update_user(
+async def updated_user(
     db: AsyncSession,
     user: User,
 ) -> User:
@@ -237,3 +237,12 @@ async def list_teachers(
 
 async def get_teacher(db: AsyncSession, teacher_id: UUID) -> Optional[Teacher]:
     return await db.get(Teacher, teacher_id)
+
+
+async def updated_teacher(db: AsyncSession, teacher: Teacher) -> Teacher:
+
+    db.add(teacher)
+    await db.commit()
+    await db.refresh(teacher)
+
+    return teacher

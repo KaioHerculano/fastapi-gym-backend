@@ -35,14 +35,18 @@ from app.repositories.accounts import (
 )
 from app.repositories.accounts import list_teachers as list_teachers_repository
 from app.repositories.accounts import list_users as list_users_repository
-from app.repositories.accounts import update_user as update_user_repository
 from app.repositories.accounts import (
     updated_student as updated_student_repository,
 )
+from app.repositories.accounts import (
+    updated_teacher as updated_teacher_repository,
+)
+from app.repositories.accounts import updated_user as updated_user_repository
 from app.schemas.accounts import (
     StudentCreateSchema,
     StudentUpdateSchema,
     TeacherCreateSchema,
+    TeacherUpdateSchema,
     UserCreateSchema,
     UserUpdateSchema,
 )
@@ -133,7 +137,7 @@ async def update_user(
     for field, value in update_data.items():
         setattr(user, field, value)
 
-    return await update_user_repository(db, user)
+    return await updated_user_repository(db, user)
 
 
 async def delete_user(
@@ -355,3 +359,39 @@ async def get_teacher(db: AsyncSession, teacher_id: UUID):
         )
 
     return teacher
+
+
+async def updated_teacher(
+    db: AsyncSession, teacher_update: TeacherUpdateSchema, teacher_id: UUID
+) -> Teacher:
+
+    teacher = await get_teacher(db, teacher_id)
+
+    update_data = teacher_update.model_dump(exclude_unset=True)
+
+    if 'cref' in update_data and update_data['cref'] != teacher.cref:
+        cref_exist = await check_teacher_cref_exists(
+            db, update_data['cref'], exclude_teacher_id=teacher_id
+        )
+
+        if cref_exist:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail='CREF já cadastrado',
+            )
+
+    if 'email' in update_data and update_data['email'] != teacher.email:
+        email_exist = await check_teacher_email_exists(
+            db, update_data['email'], exclude_teacher_id=teacher_id
+        )
+
+        if email_exist:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail='E-mail já cadastrado',
+            )
+
+    for field, value in update_data.items():
+        setattr(teacher, field, value)
+
+    return await updated_teacher_repository(db, teacher)
