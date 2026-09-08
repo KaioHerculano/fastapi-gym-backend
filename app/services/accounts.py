@@ -5,19 +5,22 @@ from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import get_password_hash
-from app.models.accounts import Student, User, Teacher
+from app.models.accounts import Student, Teacher, User
 from app.repositories.accounts import (
     check_student_cpf_exists,
     check_student_email_exists,
     check_student_user_id_exists,
-    check_user_exists,
-    user_email_exists,
     check_teacher_cref_exists,
     check_teacher_email_exists,
-    check_teacher_user_id_exists
+    check_teacher_user_id_exists,
+    check_user_exists,
+    user_email_exists,
 )
 from app.repositories.accounts import (
     create_student as create_student_repository,
+)
+from app.repositories.accounts import (
+    create_teacher as create_teacher_repository,
 )
 from app.repositories.accounts import create_user as create_user_repository
 from app.repositories.accounts import (
@@ -25,25 +28,23 @@ from app.repositories.accounts import (
 )
 from app.repositories.accounts import delete_user as delete_user_repository
 from app.repositories.accounts import get_student as get_student_repository
+from app.repositories.accounts import get_teacher as get_teacher_repository
 from app.repositories.accounts import get_user as get_user_repository
 from app.repositories.accounts import (
     list_students as list_students_repository,
 )
+from app.repositories.accounts import list_teachers as list_teachers_repository
 from app.repositories.accounts import list_users as list_users_repository
 from app.repositories.accounts import update_user as update_user_repository
 from app.repositories.accounts import (
     updated_student as updated_student_repository,
 )
-from app.repositories.accounts import create_teacher as create_teacher_repository
-from app.repositories.accounts import list_teachers as list_teachers_repository
-from app.repositories.accounts import get_teacher as get_teacher_repository
 from app.schemas.accounts import (
     StudentCreateSchema,
     StudentUpdateSchema,
+    TeacherCreateSchema,
     UserCreateSchema,
     UserUpdateSchema,
-    TeacherCreateSchema,
-    TeacherUpdateSchema
 )
 
 
@@ -280,10 +281,7 @@ async def delete_student(db: AsyncSession, student_id: UUID):
     return await delete_student_repository(db, student)
 
 
-async def create_teacher(
-    db: AsyncSession,
-    teacher: TeacherCreateSchema
-):
+async def create_teacher(db: AsyncSession, teacher: TeacherCreateSchema):
 
     teacher_user_exist = await check_user_exists(db, teacher.user_id)
 
@@ -293,12 +291,14 @@ async def create_teacher(
             detail='Usuário não encontrado',
         )
 
-    teacher_user_id_exist = await check_teacher_user_id_exists(db, teacher.user_id)
+    teacher_user_id_exist = await check_teacher_user_id_exists(
+        db, teacher.user_id
+    )
 
     if teacher_user_id_exist:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail='Conta já vinculada o outro professor(a)'
+            detail='Conta já vinculada o outro professor(a)',
         )
 
     cref_exist = await check_teacher_cref_exists(db, teacher.cref)
@@ -313,8 +313,7 @@ async def create_teacher(
 
     if email_exist:
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail='E-mail já cadastrado'
+            status_code=status.HTTP_409_CONFLICT, detail='E-mail já cadastrado'
         )
 
     db_teacher = Teacher(
@@ -345,10 +344,7 @@ async def list_teachers(
     }
 
 
-async def get_teacher(
-    db: AsyncSession,
-    teacher_id: UUID
-):
+async def get_teacher(db: AsyncSession, teacher_id: UUID):
 
     teacher = await get_teacher_repository(db, teacher_id)
 
