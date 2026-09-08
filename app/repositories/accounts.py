@@ -241,3 +241,10 @@ async def list_teachers(
 
     result = await db.execute(query)
     return list(result.scalars().all())
+
+
+async def get_teacher(
+    db: AsyncSession,
+    teacher_id: UUID
+) -> Optional[Teacher]:
+    return await db.get(Teacher, teacher_id)

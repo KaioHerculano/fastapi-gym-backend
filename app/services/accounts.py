@@ -36,6 +36,7 @@ from app.repositories.accounts import (
 )
 from app.repositories.accounts import create_teacher as create_teacher_repository
 from app.repositories.accounts import list_teachers as list_teachers_repository
+from app.repositories.accounts import get_teacher as get_teacher_repository
 from app.schemas.accounts import (
     StudentCreateSchema,
     StudentUpdateSchema,
@@ -342,3 +343,19 @@ async def list_teachers(
         'offset': offset,
         'limit': limit,
     }
+
+
+async def get_teacher(
+    db: AsyncSession,
+    teacher_id: UUID
+):
+
+    teacher = await get_teacher_repository(db, teacher_id)
+
+    if not teacher:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail='Professor(a) não encontrado',
+        )
+
+    return teacher

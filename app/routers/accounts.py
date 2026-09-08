@@ -34,6 +34,7 @@ from app.services.accounts import update_user as update_user_service
 from app.services.accounts import updated_student as updated_student_service
 from app.services.accounts import create_teacher as create_teacher_service
 from app.services.accounts import list_teachers as list_teachers_service
+from app.services.accounts import get_teacher as get_teacher_service
 
 users_router = APIRouter(
     prefix='/users',
@@ -245,15 +246,8 @@ async def get_teacher(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
-    teacher = await db.get(Teacher, teacher_id)
 
-    if not teacher:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail='Professor não encontrado',
-        )
-
-    return teacher
+    return await get_teacher_service(db, teacher_id)
 
 
 @teachers_router.patch(
