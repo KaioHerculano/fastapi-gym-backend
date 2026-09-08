@@ -35,6 +35,7 @@ from app.repositories.accounts import (
     updated_student as updated_student_repository,
 )
 from app.repositories.accounts import create_teacher as create_teacher_repository
+from app.repositories.accounts import list_teachers as list_teachers_repository
 from app.schemas.accounts import (
     StudentCreateSchema,
     StudentUpdateSchema,
@@ -326,3 +327,18 @@ async def create_teacher(
     )
 
     return await create_teacher_repository(db, db_teacher)
+
+
+async def list_teachers(
+    db: AsyncSession,
+    offset: int,
+    limit: int,
+    search: Optional[str] = None,
+):
+    teachers = await list_teachers_repository(db, offset, limit, search)
+
+    return {
+        'teachers': teachers,
+        'offset': offset,
+        'limit': limit,
+    }

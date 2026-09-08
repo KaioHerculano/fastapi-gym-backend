@@ -218,3 +218,26 @@ async def create_teacher(
     await db.commit()
     await db.refresh(teacher)
     return teacher
+
+async def list_teachers(
+    db: AsyncSession,
+    offset: int,
+    limit: int,
+    search: Optional[str] = None
+) -> Teacher:
+
+    query = select(Teacher).where(Teacher.is_active)
+
+    if search:
+        search_filter = f'%{search}%'
+        query = query.where(
+            Teacher.cref.ilike(search_filter)
+            | Teacher.full_name.ilike(search_filter)
+            | Teacher.email.ilike(search_filter)
+            | Teacher.phone.ilike(search_filter)
+        )
+
+    query = query.offset(offset).limit(limit)
+
+    result = await db.execute(query)
+    return list(result.scalars().all())

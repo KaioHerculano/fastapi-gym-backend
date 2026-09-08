@@ -33,6 +33,7 @@ from app.services.accounts import list_users as list_users_service
 from app.services.accounts import update_user as update_user_service
 from app.services.accounts import updated_student as updated_student_service
 from app.services.accounts import create_teacher as create_teacher_service
+from app.services.accounts import list_teachers as list_teachers_service
 
 users_router = APIRouter(
     prefix='/users',
@@ -229,27 +230,8 @@ async def list_teachers(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
-    query = select(Teacher).where(Teacher.is_active)
 
-    if search:
-        search_fielter = f'%{search}%'
-        query = query.where(
-            Teacher.cref.ilike(search_fielter)
-            | Teacher.full_name.ilike(search_fielter)
-            | Teacher.email.ilike(search_fielter)
-            | Teacher.phone.ilike(search_fielter)
-        )
-
-    query = query.offset(offset).limit(limit)
-
-    result = await db.execute(query)
-    teachers = result.scalars().all()
-
-    return {
-        'teachers': teachers,
-        'offset': offset,
-        'limit': limit,
-    }
+    return await list_teachers_service(db, offset, limit, search)
 
 
 @teachers_router.get(
