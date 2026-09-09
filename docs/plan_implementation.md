@@ -52,9 +52,9 @@ Objetivo: alinhar o projeto com a propria documentacao, que pede routers sem reg
 - [x] Extrair regras de usuario para `accounts_service`.
 - [x] Extrair queries de aluno para `accounts_repository`.
 - [x] Extrair regras de aluno para `accounts_service`.
-- [ ] Extrair queries de professor para `accounts_repository`.
-- [ ] Extrair regras de professor para `accounts_service`.
-- [ ] Manter routers apenas recebendo request, chamando service e retornando response.
+- [x] Extrair queries de professor para `accounts_repository`.
+- [x] Extrair regras de professor para `accounts_service`.
+- [x] Manter routers apenas recebendo request, chamando service e retornando response.
 - [ ] Cobrir essa refatoracao com testes para evitar regressao no CRUD existente.
 
 ## Fase 2 - Usuarios, autenticacao e autorizacao

@@ -1,13 +1,12 @@
 from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import exists, select
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
 from app.core.security import get_current_user
-from app.models.accounts import Teacher, User
+from app.models.accounts import User
 from app.schemas.accounts import (
     StudentCreateSchema,
     StudentListPublicSchema,
@@ -23,15 +22,20 @@ from app.schemas.accounts import (
     UserUpdateSchema,
 )
 from app.services.accounts import create_student as create_student_service
+from app.services.accounts import create_teacher as create_teacher_service
 from app.services.accounts import create_user as create_user_service
 from app.services.accounts import delete_student as delete_student_service
+from app.services.accounts import delete_teacher as delete_teacher_service
 from app.services.accounts import delete_user as delete_user_service
 from app.services.accounts import get_student as get_student_service
+from app.services.accounts import get_teacher as get_teacher_service
 from app.services.accounts import get_user as get_user_service
 from app.services.accounts import list_students as list_students_service
+from app.services.accounts import list_teachers as list_teachers_service
 from app.services.accounts import list_users as list_users_service
 from app.services.accounts import update_user as update_user_service
 from app.services.accounts import updated_student as updated_student_service
+from app.services.accounts import updated_teacher as updated_teacher_service
 
 users_router = APIRouter(
     prefix='/users',
@@ -208,61 +212,7 @@ async def create_teacher(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
-    teacher_user_exist = await db.scalar(
-        select(exists().where(User.id == teacher.user_id))
-    )
-
-    if not teacher_user_exist:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail='Usuário não encontrado',
-        )
-
-    teacher_user_id_exist = await db.scalar(
-        select(exists().where(Teacher.user_id == teacher.user_id))
-    )
-
-    if teacher_user_id_exist:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail='Conta já vinculada a outro professor',
-        )
-
-    cref_exist = await db.scalar(
-        select(exists().where(Teacher.cref == teacher.cref))
-    )
-
-    if cref_exist:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail='CREF já cadastrado',
-        )
-
-    email_exist = await db.scalar(
-        select(exists().where(Teacher.email == teacher.email))
-    )
-
-    if email_exist:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail='E-mail já cadastrado',
-        )
-
-    db_techer = Teacher(
-        user_id=teacher.user_id,
-        full_name=teacher.full_name,
-        cref=teacher.cref,
-        phone=teacher.phone,
-        email=teacher.email,
-        specialty=teacher.specialty,
-        is_active=teacher.is_active,
-    )
-
-    db.add(db_techer)
-    await db.commit()
-    await db.refresh(db_techer)
-
-    return db_techer
+    return await create_teacher_service(db, teacher)
 
 
 @teachers_router.get(
@@ -282,27 +232,8 @@ async def list_teachers(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
-    query = select(Teacher).where(Teacher.is_active)
 
-    if search:
-        search_fielter = f'%{search}%'
-        query = query.where(
-            Teacher.cref.ilike(search_fielter)
-            | Teacher.full_name.ilike(search_fielter)
-            | Teacher.email.ilike(search_fielter)
-            | Teacher.phone.ilike(search_fielter)
-        )
-
-    query = query.offset(offset).limit(limit)
-
-    result = await db.execute(query)
-    teachers = result.scalars().all()
-
-    return {
-        'teachers': teachers,
-        'offset': offset,
-        'limit': limit,
-    }
+    return await list_teachers_service(db, offset, limit, search)
 
 
 @teachers_router.get(
@@ -316,15 +247,8 @@ async def get_teacher(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
-    teacher = await db.get(Teacher, teacher_id)
 
-    if not teacher:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail='Professor não encontrado',
-        )
-
-    return teacher
+    return await get_teacher_service(db, teacher_id)
 
 
 @teachers_router.patch(
@@ -339,55 +263,8 @@ async def updated_teacher(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
-    teacher = await db.get(Teacher, teacher_id)
 
-    if not teacher:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail='Professor não encontrado',
-        )
-
-    update_data = teacher_update.model_dump(exclude_unset=True)
-
-    if 'cref' in update_data and update_data['cref'] != teacher.cref:
-        cref_exists = await db.scalar(
-            select(
-                exists().where(
-                    (Teacher.cref == update_data['cref'])
-                    & (Teacher.id != teacher_id)
-                )
-            )
-        )
-
-        if cref_exists:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail='CREF já cadastrado',
-            )
-
-    if 'email' in update_data and update_data['email'] != teacher.email:
-        email_exists = await db.scalar(
-            select(
-                exists().where(
-                    (Teacher.email == update_data['email'])
-                    & (Teacher.id != teacher_id)
-                )
-            )
-        )
-
-        if email_exists:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail='E-mail já cadastrado',
-            )
-
-    for fild, value in update_data.items():
-        setattr(teacher, fild, value)
-
-    await db.commit()
-    await db.refresh(teacher)
-
-    return teacher
+    return await updated_teacher_service(db, teacher_update, teacher_id)
 
 
 @teachers_router.delete(
@@ -400,21 +277,5 @@ async def delete_teacher(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
-    teacher = await db.get(Teacher, teacher_id)
 
-    if not teacher:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail='Professor não encontrado',
-        )
-
-    if teacher.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail='Professor já deletado',
-        )
-
-    teacher.is_active = False
-
-    db.add(teacher)
-    await db.commit()
+    return await delete_teacher_service(db, teacher_id)
