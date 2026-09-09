@@ -1,12 +1,12 @@
 from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
 from app.core.security import get_current_user
-from app.models.accounts import Teacher, User
+from app.models.accounts import User
 from app.schemas.accounts import (
     StudentCreateSchema,
     StudentListPublicSchema,
@@ -25,6 +25,7 @@ from app.services.accounts import create_student as create_student_service
 from app.services.accounts import create_teacher as create_teacher_service
 from app.services.accounts import create_user as create_user_service
 from app.services.accounts import delete_student as delete_student_service
+from app.services.accounts import delete_teacher as delete_teacher_service
 from app.services.accounts import delete_user as delete_user_service
 from app.services.accounts import get_student as get_student_service
 from app.services.accounts import get_teacher as get_teacher_service
@@ -276,21 +277,5 @@ async def delete_teacher(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
-    teacher = await db.get(Teacher, teacher_id)
 
-    if not teacher:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail='Professor não encontrado',
-        )
-
-    if teacher.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail='Professor já deletado',
-        )
-
-    teacher.is_active = False
-
-    db.add(teacher)
-    await db.commit()
+    return await delete_teacher_service(db, teacher_id)

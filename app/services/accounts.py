@@ -26,6 +26,9 @@ from app.repositories.accounts import create_user as create_user_repository
 from app.repositories.accounts import (
     delete_student as delete_student_repository,
 )
+from app.repositories.accounts import (
+    delete_teacher as delete_teacher_repository,
+)
 from app.repositories.accounts import delete_user as delete_user_repository
 from app.repositories.accounts import get_student as get_student_repository
 from app.repositories.accounts import get_teacher as get_teacher_repository
@@ -395,3 +398,18 @@ async def updated_teacher(
         setattr(teacher, field, value)
 
     return await updated_teacher_repository(db, teacher)
+
+
+async def delete_teacher(db: AsyncSession, teacher_id: UUID):
+
+    teacher = await get_teacher(db, teacher_id)
+
+    if not teacher.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail='Professor(a) já deletado',
+        )
+
+    teacher.is_active = False
+
+    return await delete_teacher_repository(db, teacher)

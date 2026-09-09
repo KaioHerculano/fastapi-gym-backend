@@ -246,3 +246,9 @@ async def updated_teacher(db: AsyncSession, teacher: Teacher) -> Teacher:
     await db.refresh(teacher)
 
     return teacher
+
+
+async def delete_teacher(db: AsyncSession, teacher: Teacher):
+
+    db.add(teacher)
+    await db.commit()
