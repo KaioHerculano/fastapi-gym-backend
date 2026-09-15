@@ -24,12 +24,12 @@ Legenda:
 - [x] Hash de senha com `pwdlib`.
 - [x] Login JWT e refresh simples.
 - [x] `.env.example` criado com as variaveis obrigatorias atuais.
-- [~] Protecao por token existe em rotas, mas RBAC por papel ainda nao.
-- [~] Regras de negocio estao implementadas direto nos routers; a documentacao pede separar em services/repositories.
+- [x] Protecao por token existe em rotas e RBAC por papel iniciado com RoleChecker.
+- [x] Regras de negocio de accounts separadas em services/repositories.
 - [~] Autenticacao existe, mas o contrato nao retorna `expires_in` e o refresh token real ainda nao foi modelado.
 - [ ] Recuperacao de senha.
 - [ ] Planos, matriculas, pagamentos, check-ins, treinos, exercicios e avaliacoes fisicas.
-- [ ] Testes automatizados relevantes.
+- [~] Testes automatizados relevantes (infraestrutura base e testes de auth concluidos).
 - [ ] Auditoria/logs das operacoes sensiveis.
 
 ## Fase 0 - Decisoes base
@@ -69,16 +69,16 @@ Requisitos relacionados: RF001, RF002, RF003, RF004, RNF002.
 - [x] Hash de senha.
 - [x] Login com JWT.
 - [x] Dependencia `get_current_user`.
-- [ ] Impedir login de usuario `is_active = False`.
+- [x] Impedir login de usuario `is_active = False`.
 - [ ] Incluir `role` nas claims ou garantir lookup eficiente para autorizacao.
-- [ ] Criar dependencia de permissao por papel: Admin, Teacher, Receptionist, Student.
-- [ ] Aplicar RBAC nas rotas administrativas.
+- [x] Criar dependencia de permissao por papel: Admin, Teacher, Receptionist, Student.
+- [~] Aplicar RBAC nas rotas administrativas.
 - [ ] Ajustar response do login para incluir `expires_in`, se mantiver contrato da doc.
 - [ ] Decidir se `/refresh_token` atual e suficiente ou se havera refresh token persistido/rotacionado.
 - [ ] Implementar recuperacao de senha ou marcar formalmente como fora do MVP.
 - [ ] Criar seed de admin padrao para primeiro acesso.
-- [ ] Testar login com credenciais invalidas.
-- [ ] Testar bloqueio de usuario inativo.
+- [x] Testar login com credenciais invalidas.
+- [x] Testar bloqueio de usuario inativo.
 - [ ] Testar permissao negada por role.
 
 ## Fase 3 - Alunos
