@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
 from app.core.settings import Settings
-from app.models.accounts import User
+from app.models.accounts import RoleEnum, User
 
 pwd_context = PasswordHash.recommended()
 security = HTTPBearer()
@@ -72,6 +72,13 @@ async def authenticate_user(
     if not verify_password(password, user.password):
         return None
 
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail='Usuário inativo.',
+            headers={'WWW-Authenticate': 'Bearer'},
+        )
+
     return user
 
 
@@ -109,4 +116,28 @@ async def get_current_user(
             headers={'WWW-Authenticate': 'Bearer'},
         )
 
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail='Usuário inativo.',
+            headers={'WWW-Authenticate': 'Bearer'},
+        )
+
     return user
+
+
+class RoleChecker:
+    def __init__(self, allowed_roles: list[RoleEnum]):
+        self.allowed_roles = allowed_roles
+
+    async def __call__(
+        self, current_user: User = Depends(get_current_user)
+    ) -> User:
+        if current_user.role not in self.allowed_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail='Operação não permitida para o seu nivel de acesso',
+                headers={'WWW-Authenticate': 'Bearer'},
+            )
+
+        return current_user
