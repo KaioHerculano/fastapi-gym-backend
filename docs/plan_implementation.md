@@ -135,8 +135,8 @@ Requisitos relacionados: RF010, RF011, RF012, RF013, RN02, RN15.
 
 Requisitos relacionados: RF014, RF015, RN06.
 
-- [ ] Criar model `Plan`.
-- [ ] Criar migration de `plans`.
+- [x] Criar model `Plan`.
+- [x] Criar migration de `plans`.
 - [ ] Criar schemas `PlanCreate`, `PlanUpdate`, `PlanPublic`, `PlanList`.
 - [ ] Validar `price > 0`.
 - [ ] Validar `duration_months > 0`.
