@@ -137,9 +137,9 @@ Requisitos relacionados: RF014, RF015, RN06.
 
 - [x] Criar model `Plan`.
 - [x] Criar migration de `plans`.
-- [ ] Criar schemas `PlanCreate`, `PlanUpdate`, `PlanPublic`, `PlanList`.
-- [ ] Validar `price > 0`.
-- [ ] Validar `duration_months > 0`.
+- [x] Criar schemas `PlanCreate`, `PlanUpdate`, `PlanPublic`, `PlanList`.
+- [x] Validar `price > 0`.
+- [x] Validar `duration_months > 0`.
 - [ ] Criar endpoint `GET /api/v1/plans`.
 - [ ] Criar endpoint `POST /api/v1/plans`.
 - [ ] Criar endpoint `PATCH /api/v1/plans/{plan_id}`.
