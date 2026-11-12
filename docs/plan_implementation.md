@@ -28,7 +28,7 @@ Legenda:
 - [x] Regras de negocio de accounts separadas em services/repositories.
 - [~] Autenticacao existe, mas o contrato nao retorna `expires_in` e o refresh token real ainda nao foi modelado.
 - [ ] Recuperacao de senha.
-- [ ] Planos, matriculas, pagamentos, check-ins, treinos, exercicios e avaliacoes fisicas.
+- [~] Planos (model, migration, schemas e repository concluidos), matriculas, pagamentos, check-ins, treinos, exercicios e avaliacoes fisicas.
 - [~] Testes automatizados relevantes (infraestrutura base e testes de auth concluidos).
 - [ ] Auditoria/logs das operacoes sensiveis.
 
@@ -135,11 +135,11 @@ Requisitos relacionados: RF010, RF011, RF012, RF013, RN02, RN15.
 
 Requisitos relacionados: RF014, RF015, RN06.
 
-- [ ] Criar model `Plan`.
-- [ ] Criar migration de `plans`.
-- [ ] Criar schemas `PlanCreate`, `PlanUpdate`, `PlanPublic`, `PlanList`.
-- [ ] Validar `price > 0`.
-- [ ] Validar `duration_months > 0`.
+- [x] Criar model `Plan`.
+- [x] Criar migration de `plans`.
+- [x] Criar schemas `PlanCreate`, `PlanUpdate`, `PlanPublic`, `PlanList`.
+- [x] Validar `price > 0`.
+- [x] Validar `duration_months > 0`.
 - [ ] Criar endpoint `GET /api/v1/plans`.
 - [ ] Criar endpoint `POST /api/v1/plans`.
 - [ ] Criar endpoint `PATCH /api/v1/plans/{plan_id}`.
