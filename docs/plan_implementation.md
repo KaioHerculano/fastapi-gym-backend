@@ -28,7 +28,7 @@ Legenda:
 - [x] Regras de negocio de accounts separadas em services/repositories.
 - [~] Autenticacao existe, mas o contrato nao retorna `expires_in` e o refresh token real ainda nao foi modelado.
 - [ ] Recuperacao de senha.
-- [ ] Planos, matriculas, pagamentos, check-ins, treinos, exercicios e avaliacoes fisicas.
+- [~] Planos (model, migration, schemas e repository concluidos), matriculas, pagamentos, check-ins, treinos, exercicios e avaliacoes fisicas.
 - [~] Testes automatizados relevantes (infraestrutura base e testes de auth concluidos).
 - [ ] Auditoria/logs das operacoes sensiveis.
 
